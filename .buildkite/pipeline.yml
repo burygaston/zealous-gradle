@@ -56,12 +56,17 @@ steps:
     agents:
       queue: "bk-hosted"
     command: |
-      echo "--- :wrench: Installing Java 21"
-      # Install Java 21 (Amazon Corretto)
-      curl -fsSL https://apt.corretto.aws/corretto.key | sudo gpg --dearmor -o /usr/share/keyrings/corretto-keyring.gpg
-      echo "deb [signed-by=/usr/share/keyrings/corretto-keyring.gpg] https://apt.corretto.aws stable main" | sudo tee /etc/apt/sources.list.d/corretto.list
-      sudo apt-get update
-      sudo apt-get install -y java-21-amazon-corretto-jdk
+      echo "--- :wrench: Setting up Java 21"
+      # Check if Java is already installed
+      if ! command -v java &> /dev/null; then
+        echo "Installing Java 21 (Amazon Corretto)"
+        curl -fsSL https://apt.corretto.aws/corretto.key | sudo gpg --dearmor --yes -o /usr/share/keyrings/corretto-keyring.gpg
+        echo "deb [signed-by=/usr/share/keyrings/corretto-keyring.gpg] https://apt.corretto.aws stable main" | sudo tee /etc/apt/sources.list.d/corretto.list
+        sudo apt-get update -qq
+        sudo apt-get install -y java-21-amazon-corretto-jdk
+      else
+        echo "Java already installed"
+      fi
 
       echo "--- :mag: Setting up Java environment"
       export JAVA_HOME=/usr/lib/jvm/java-21-amazon-corretto
@@ -87,11 +92,17 @@ steps:
     agents:
       queue: "bk-hosted"
     command: |
-      echo "--- :wrench: Installing Java 21"
-      curl -fsSL https://apt.corretto.aws/corretto.key | sudo gpg --dearmor -o /usr/share/keyrings/corretto-keyring.gpg
-      echo "deb [signed-by=/usr/share/keyrings/corretto-keyring.gpg] https://apt.corretto.aws stable main" | sudo tee /etc/apt/sources.list.d/corretto.list
-      sudo apt-get update
-      sudo apt-get install -y java-21-amazon-corretto-jdk
+      echo "--- :wrench: Setting up Java 21"
+      # Check if Java is already installed
+      if ! command -v java &> /dev/null; then
+        echo "Installing Java 21 (Amazon Corretto)"
+        curl -fsSL https://apt.corretto.aws/corretto.key | sudo gpg --dearmor --yes -o /usr/share/keyrings/corretto-keyring.gpg
+        echo "deb [signed-by=/usr/share/keyrings/corretto-keyring.gpg] https://apt.corretto.aws stable main" | sudo tee /etc/apt/sources.list.d/corretto.list
+        sudo apt-get update -qq
+        sudo apt-get install -y java-21-amazon-corretto-jdk
+      else
+        echo "Java already installed"
+      fi
 
       export JAVA_HOME=/usr/lib/jvm/java-21-amazon-corretto
       export PATH="$JAVA_HOME/bin:$PATH"
@@ -125,9 +136,15 @@ steps:
     agents:
       queue: "bk-hosted"
     command: |
-      echo "--- :wrench: Installing Node.js 20.x"
-      curl -fsSL https://deb.nodesource.com/setup_20.x | sudo bash -
-      sudo apt-get install -y nodejs
+      echo "--- :wrench: Setting up Node.js 20.x"
+      # Check if Node.js is already installed
+      if ! command -v node &> /dev/null; then
+        echo "Installing Node.js 20.x"
+        curl -fsSL https://deb.nodesource.com/setup_20.x | sudo bash -
+        sudo apt-get install -y nodejs
+      else
+        echo "Node.js already installed: $(node --version)"
+      fi
 
       echo "--- :nodejs: Installing Node.js dependencies"
       npm install
