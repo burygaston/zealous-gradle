@@ -1,0 +1,51 @@
+# Build outputs
+build/
+target/
+*.jar
+*.war
+*.ear
+
+# Gradle
+.gradle/
+gradle-app.setting
+!gradle-wrapper.jar
+
+# IDE files
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+.DS_Store
+
+# Version control
+.git/
+.gitignore
+.gitattributes
+
+# CI/CD
+.buildkite/
+buildkite-annotation.md
+
+# Documentation
+*.md
+!README.md
+
+# Docker
+Dockerfile
+.dockerignore
+docker-compose.yml
+
+# Logs and temporary files
+*.log
+*.tmp
+*.swp
+*.swo
+*~
+
+# Test reports
+test-results/
+reports/
+
+# OS files
+Thumbs.db

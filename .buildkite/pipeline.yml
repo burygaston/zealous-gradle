@@ -38,6 +38,52 @@ steps:
 
   - wait
 
+  - label: ":docker: Build & Push Docker Image"
+    key: "docker"
+    command: |
+      echo "--- :docker: Building Docker image"
+
+      # Set image tag with build number and commit
+      IMAGE_TAG="${BUILDKITE_BUILD_NUMBER}-${BUILDKITE_COMMIT:0:7}"
+      DOCKER_IMAGE="${DOCKERHUB_USERNAME:-taskmanager}/task-manager"
+
+      # Build the Docker image
+      docker build -t ${DOCKER_IMAGE}:${IMAGE_TAG} -t ${DOCKER_IMAGE}:latest .
+
+      echo "--- :arrow_up: Pushing to DockerHub"
+
+      # Login to DockerHub (requires DOCKERHUB_USERNAME and DOCKERHUB_TOKEN environment variables)
+      echo "${DOCKERHUB_TOKEN}" | docker login -u "${DOCKERHUB_USERNAME}" --password-stdin
+
+      # Push both tags
+      docker push ${DOCKER_IMAGE}:${IMAGE_TAG}
+      docker push ${DOCKER_IMAGE}:latest
+
+      echo "--- :white_check_mark: Docker image pushed successfully"
+      echo "Image: ${DOCKER_IMAGE}:${IMAGE_TAG}"
+      echo "Latest: ${DOCKER_IMAGE}:latest"
+
+      # Create annotation with Docker image info
+      cat <<EOF | buildkite-agent annotate --style "info" --context "docker-info"
+      ## 🐳 Docker Image Published
+
+      **Image:** \`${DOCKER_IMAGE}:${IMAGE_TAG}\`
+      **Latest:** \`${DOCKER_IMAGE}:latest\`
+
+      ### Pull the image:
+      \`\`\`bash
+      docker pull ${DOCKER_IMAGE}:${IMAGE_TAG}
+      \`\`\`
+
+      ### Run the container:
+      \`\`\`bash
+      docker run -p 8080:8080 ${DOCKER_IMAGE}:${IMAGE_TAG}
+      \`\`\`
+      EOF
+    timeout_in_minutes: 15
+    agents:
+      queue: "docker"
+
   - label: ":memo: Build Summary"
     key: "summary"
     command: |
@@ -57,6 +103,7 @@ steps:
       - \`task-manager-1.0.0.jar\` - Application JAR file
       - Test results (XML format)
       - Test reports (HTML format)
+      - Docker image (see Docker Image Published annotation)
 
       Download from the **Artifacts** tab above.
       EOF
@@ -70,6 +117,7 @@ steps:
       - [ ] Review test coverage
       - [ ] Check for any warnings
       - [ ] Verify all critical tests passed
+      - [ ] Test Docker image locally
       EOF
 
       echo "--- :tada: All annotations created successfully!"
