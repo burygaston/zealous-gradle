@@ -1,8 +1,6 @@
 env:
   GRADLE_OPTS: "-Dorg.gradle.daemon=false -Dorg.gradle.parallel=true"
   BUILDKITE_ANALYTICS_TOKEN: "VXzdR2LfZPQ93FXXetcCcsJW"
-  JAVA_HOME: "/usr/lib/jvm/java-21-amazon-corretto"
-  PATH: "/usr/lib/jvm/java-21-amazon-corretto/bin:${PATH}"
 
 steps:
   - label: ":gradle: Build Project"
@@ -10,6 +8,13 @@ steps:
     agents:
       queue: "bk-hosted"
     command: |
+      echo "--- :mag: Setting up Java environment"
+      # Find and set JAVA_HOME dynamically
+      export JAVA_HOME=$(dirname $(dirname $(readlink -f $(which java))))
+      export PATH="$JAVA_HOME/bin:$PATH"
+      echo "JAVA_HOME set to: $JAVA_HOME"
+      java -version
+
       echo "--- :package: Installing dependencies"
       ./gradlew dependencies --no-daemon
 
@@ -28,6 +33,9 @@ steps:
     agents:
       queue: "bk-hosted"
     command: |
+      export JAVA_HOME=$(dirname $(dirname $(readlink -f $(which java))))
+      export PATH="$JAVA_HOME/bin:$PATH"
+
       echo "--- :test_tube: Running Java unit tests"
       ./gradlew test --no-daemon || EXIT_CODE=$?
 

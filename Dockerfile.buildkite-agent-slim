@@ -40,10 +40,13 @@ RUN mkdir -p /root/.gradle && \
 # Set Gradle environment variables
 ENV GRADLE_OPTS="-Dorg.gradle.daemon=false -Dorg.gradle.parallel=true"
 
-# Verify installations
+# Verify installations and show Java path
 RUN java -version && \
     node --version && \
-    npm --version
+    npm --version && \
+    echo "Java installed at:" && \
+    ls -la /usr/lib/jvm/ && \
+    readlink -f /usr/bin/java
 
 # Labels for image metadata
 LABEL maintainer="Task Manager Project" \
