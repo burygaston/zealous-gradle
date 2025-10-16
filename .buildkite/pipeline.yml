@@ -5,6 +5,8 @@ env:
 steps:
   - label: ":gradle: Build Project"
     key: "build"
+    agents:
+      queue: "bk-hosted"
     command: |
       echo "--- :package: Installing dependencies"
       ./gradlew dependencies --no-daemon
@@ -21,6 +23,8 @@ steps:
   - label: ":test_tube: Run Java Tests"
     key: "test-java"
     depends_on: "build"
+    agents:
+      queue: "bk-hosted"
     command: |
       echo "--- :test_tube: Running Java unit tests"
       ./gradlew test --no-daemon || EXIT_CODE=$?
@@ -48,6 +52,8 @@ steps:
   - label: ":jest: Run JavaScript Tests"
     key: "test-js"
     depends_on: "build"
+    agents:
+      queue: "bk-hosted"
     command: |
       echo "--- :nodejs: Installing Node.js dependencies"
       npm install
@@ -79,6 +85,8 @@ steps:
 
   - label: ":bar_chart: Test Results Summary"
     key: "test-summary"
+    agents:
+      queue: "bk-hosted"
     command: |
       echo "--- :inbox_tray: Downloading test artifacts"
       buildkite-agent artifact download "build/test-results/**/*.xml" . || true
@@ -151,6 +159,8 @@ steps:
 
   - label: ":docker: Build & Push Docker Image"
     key: "docker"
+    agents:
+      queue: "bk-hosted"
     command: |
       echo "--- :docker: Building Docker image"
 
@@ -195,6 +205,8 @@ steps:
 
   - label: ":memo: Build Summary"
     key: "summary"
+    agents:
+      queue: "bk-hosted"
     command: |
       echo "--- :clipboard: Generating build summary annotation"
 
