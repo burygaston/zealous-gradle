@@ -3,6 +3,54 @@ env:
   BUILDKITE_ANALYTICS_TOKEN: "VXzdR2LfZPQ93FXXetcCcsJW"
 
 steps:
+  - label: ":mag: System Diagnostics"
+    key: "diagnostics"
+    agents:
+      queue: "bk-hosted"
+    command: |
+      echo "--- :computer: OS Information"
+      uname -a
+      echo ""
+      cat /etc/os-release || lsb_release -a
+      echo "Architecture: $(uname -m)"
+
+      echo "--- :gear: CPU Configuration"
+      lscpu || cat /proc/cpuinfo | grep -E "processor|model name|cpu cores" | head -20
+
+      echo "--- :floppy_disk: Memory Information"
+      free -m
+      echo ""
+      cat /proc/meminfo | head -10
+
+      echo "--- :file_folder: Disk and Mounts"
+      df -h
+      echo ""
+      lsblk || echo "lsblk not available"
+
+      echo "--- :network: Network Interfaces"
+      ip addr || ifconfig
+
+      echo "--- :package: Installed Packages (sampling)"
+      if command -v dpkg &> /dev/null; then
+        echo "Debian/Ubuntu system detected"
+        dpkg -l | grep -E "java|node|git|docker|curl" || echo "No matching packages"
+      elif command -v rpm &> /dev/null; then
+        echo "Red Hat/CentOS system detected"
+        rpm -qa | grep -E "java|node|git|docker|curl" || echo "No matching packages"
+      fi
+
+      echo "--- :wrench: Checking for Java installations"
+      find /usr/lib/jvm -type d 2>/dev/null || echo "/usr/lib/jvm not found"
+      find /usr -name "java" -type f 2>/dev/null | head -10 || echo "No java executables found"
+
+      echo "--- :wrench: Checking for Node.js"
+      which node || echo "node not in PATH"
+      which npm || echo "npm not in PATH"
+
+      echo "--- :globe_with_meridians: Environment Variables"
+      env | grep -E "JAVA|PATH|HOME" | sort
+    timeout_in_minutes: 5
+
   - label: ":gradle: Build Project"
     key: "build"
     agents:
