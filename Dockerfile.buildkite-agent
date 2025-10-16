@@ -1,0 +1,94 @@
+# Buildkite Agent Docker Image for Task Manager Project
+# This image includes all dependencies needed to build and test the project
+
+FROM buildkite/agent:3
+
+# Install required system dependencies
+USER root
+
+# Update package lists
+RUN apt-get update && apt-get install -y \
+    # Essential build tools
+    build-essential \
+    curl \
+    wget \
+    git \
+    unzip \
+    # For downloading and installing Java
+    software-properties-common \
+    ca-certificates \
+    gnupg \
+    # For Node.js
+    && curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
+    && apt-get install -y nodejs \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Java 21 (required for Spring Boot 3.2.0)
+RUN wget https://download.oracle.com/java/21/latest/jdk-21_linux-x64_bin.tar.gz && \
+    mkdir -p /opt/java && \
+    tar -xzf jdk-21_linux-x64_bin.tar.gz -C /opt/java && \
+    rm jdk-21_linux-x64_bin.tar.gz && \
+    ln -s /opt/java/jdk-21.* /opt/java/current
+
+# Set Java environment variables
+ENV JAVA_HOME=/opt/java/current
+ENV PATH="${JAVA_HOME}/bin:${PATH}"
+
+# Verify Java installation
+RUN java -version
+
+# Install Gradle (the project uses Gradle wrapper, but having Gradle helps)
+RUN wget https://services.gradle.org/distributions/gradle-8.5-bin.zip && \
+    unzip -d /opt/gradle gradle-8.5-bin.zip && \
+    rm gradle-8.5-bin.zip && \
+    ln -s /opt/gradle/gradle-8.5 /opt/gradle/current
+
+ENV GRADLE_HOME=/opt/gradle/current
+ENV PATH="${GRADLE_HOME}/bin:${PATH}"
+
+# Verify Gradle installation
+RUN gradle --version
+
+# Verify Node.js and npm installation
+RUN node --version && npm --version
+
+# Install Docker CLI (for Docker builds in the pipeline)
+RUN curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add - && \
+    add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" && \
+    apt-get update && \
+    apt-get install -y docker-ce-cli && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# Install GitHub CLI (for PR operations if needed)
+RUN curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg && \
+    chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg && \
+    echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | tee /etc/apt/sources.list.d/github-cli.list > /dev/null && \
+    apt-get update && \
+    apt-get install gh -y && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# Set up Gradle daemon settings for CI
+RUN mkdir -p /root/.gradle && \
+    echo "org.gradle.daemon=false" >> /root/.gradle/gradle.properties && \
+    echo "org.gradle.parallel=true" >> /root/.gradle/gradle.properties && \
+    echo "org.gradle.caching=true" >> /root/.gradle/gradle.properties
+
+# Create a buildkite-agent user directory
+RUN mkdir -p /buildkite/builds && \
+    chown -R buildkite-agent:buildkite-agent /buildkite
+
+# Switch back to buildkite-agent user
+USER buildkite-agent
+
+# Set working directory
+WORKDIR /buildkite/builds
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD java -version && node --version && gradle --version || exit 1
+
+# Default command (will be overridden by Buildkite)
+CMD ["buildkite-agent", "start"]
