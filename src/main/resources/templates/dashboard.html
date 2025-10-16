@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Task Manager</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body class="dashboard-page">
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h1 class="logo">Task Manager</h1>
+                <p class="user-info" sec:authentication="name">User</p>
+            </div>
+
+            <button class="btn btn-primary btn-new-task" id="newTaskBtn">
+                <span class="icon">+</span> New Task
+            </button>
+
+            <nav class="sidebar-nav">
+                <a href="#" class="nav-link active" data-filter="all">
+                    <span class="icon">📋</span> All Tasks
+                </a>
+                <a href="#" class="nav-link" data-filter="TODO">
+                    <span class="icon">⏳</span> To Do
+                </a>
+                <a href="#" class="nav-link" data-filter="IN_PROGRESS">
+                    <span class="icon">🔄</span> In Progress
+                </a>
+                <a href="#" class="nav-link" data-filter="COMPLETE">
+                    <span class="icon">✅</span> Complete
+                </a>
+                <a href="#" class="nav-link" data-filter="overdue">
+                    <span class="icon">🚨</span> Overdue
+                </a>
+            </nav>
+
+            <div class="stats-panel">
+                <h3>Statistics</h3>
+                <div class="stat-item">
+                    <span class="stat-label">Total</span>
+                    <span class="stat-value" id="statTotal">0</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">To Do</span>
+                    <span class="stat-value" id="statTodo">0</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">In Progress</span>
+                    <span class="stat-value" id="statInProgress">0</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Complete</span>
+                    <span class="stat-value" id="statComplete">0</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Overdue</span>
+                    <span class="stat-value stat-overdue" id="statOverdue">0</span>
+                </div>
+            </div>
+
+            <form th:action="@{/logout}" method="post" class="logout-form">
+                <button type="submit" class="btn btn-logout">Logout</button>
+            </form>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="content-header">
+                <h2 id="filterTitle">All Tasks</h2>
+                <p class="subtitle">Sorted by deadline</p>
+            </div>
+
+            <div class="timeline-container" id="timelineContainer">
+                <div class="timeline-line"></div>
+                <div id="taskList" class="task-list">
+                    <!-- Tasks will be dynamically inserted here -->
+                </div>
+                <div id="emptyState" class="empty-state" style="display: none;">
+                    <p>No tasks found</p>
+                    <button class="btn btn-primary" id="emptyNewTaskBtn">Create Your First Task</button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Task Modal -->
+    <div id="taskModal" class="modal" style="display: none;">
+        <div class="modal-overlay"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">New Task</h2>
+                <button class="modal-close" id="closeModal">&times;</button>
+            </div>
+            <form id="taskForm" class="task-form">
+                <input type="hidden" id="taskId">
+
+                <div class="form-group">
+                    <label for="taskTitle">Title *</label>
+                    <input type="text" id="taskTitle" required placeholder="Enter task title">
+                </div>
+
+                <div class="form-group">
+                    <label for="taskDescription">Description</label>
+                    <textarea id="taskDescription" rows="4" placeholder="Enter task description"></textarea>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="taskStatus">Status *</label>
+                        <select id="taskStatus" required>
+                            <option value="TODO">To Do</option>
+                            <option value="IN_PROGRESS">In Progress</option>
+                            <option value="COMPLETE">Complete</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="taskPriority">Priority</label>
+                        <select id="taskPriority">
+                            <option value="0">Low</option>
+                            <option value="1">Medium</option>
+                            <option value="2">High</option>
+                            <option value="3">Critical</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="taskDeadline">Deadline *</label>
+                    <input type="datetime-local" id="taskDeadline" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Labels (optional)</label>
+                    <div id="labelList" class="label-list">
+                        <!-- Labels will be loaded here -->
+                    </div>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" id="cancelBtn">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="saveBtn">Save Task</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script th:src="@{/js/dashboard.js}"></script>
+</body>
+</html>

@@ -1,0 +1,109 @@
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version '3.2.0'
+    id 'io.spring.dependency-management' version '1.1.4'
+    id 'checkstyle'
+    id 'pmd'
+    id 'com.github.spotbugs' version '5.2.1'
+}
+
+group = 'com.taskmanager'
+version = '1.0.0'
+sourceCompatibility = '17'
+
+configurations {
+    compileOnly {
+        extendsFrom annotationProcessor
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    // Spring Boot Starters
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'org.springframework.boot:spring-boot-starter-security'
+    implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
+    implementation 'org.springframework.boot:spring-boot-starter-mail'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+    implementation 'org.thymeleaf.extras:thymeleaf-extras-springsecurity6'
+
+    // MySQL Driver
+    runtimeOnly 'com.mysql:mysql-connector-j'
+
+    // Lombok
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
+
+    // MapStruct
+    implementation 'org.mapstruct:mapstruct:1.5.5.Final'
+    annotationProcessor 'org.mapstruct:mapstruct-processor:1.5.5.Final'
+
+    // Jackson for JSON
+    implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
+
+    // Testing
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.springframework.security:spring-security-test'
+    testImplementation 'org.mockito:mockito-core'
+    testImplementation 'org.mockito:mockito-junit-jupiter'
+
+    // SpotBugs annotations
+    compileOnly 'com.github.spotbugs:spotbugs-annotations:4.8.0'
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+    maxParallelForks = Runtime.runtime.availableProcessors().intdiv(2) ?: 1
+
+    testLogging {
+        events "passed", "skipped", "failed"
+        exceptionFormat "full"
+        showStandardStreams = false
+    }
+
+    reports {
+        junitXml.required = true
+        html.required = true
+    }
+}
+
+checkstyle {
+    toolVersion = '10.12.5'
+    configFile = file("${rootDir}/config/checkstyle/checkstyle.xml")
+    ignoreFailures = true
+}
+
+pmd {
+    toolVersion = '6.55.0'
+    ignoreFailures = true
+    ruleSets = []
+    ruleSetFiles = files("${rootDir}/config/pmd/ruleset.xml")
+}
+
+spotbugs {
+    toolVersion = '4.8.0'
+    ignoreFailures = true
+}
+
+task prepareArtifacts(type: Copy) {
+    dependsOn build
+    from("${buildDir}/libs") {
+        include '*.jar'
+    }
+    from("${buildDir}/reports") {
+        into 'reports'
+    }
+    into "${buildDir}/distribution"
+
+    doLast {
+        println "Artifacts prepared in ${buildDir}/distribution"
+    }
+}
+
+tasks.withType(JavaCompile) {
+    options.compilerArgs << '-parameters'
+}
