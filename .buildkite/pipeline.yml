@@ -85,8 +85,6 @@ steps:
       \`\`\`
       EOF
     timeout_in_minutes: 15
-    agents:
-      queue: "docker"
 
   - label: ":memo: Build Summary"
     key: "summary"
