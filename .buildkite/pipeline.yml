@@ -23,11 +23,13 @@ steps:
     depends_on: "build"
     command: |
       echo "--- :test_tube: Running Java unit tests"
-      ./gradlew test --no-daemon
+      ./gradlew test --no-daemon || EXIT_CODE=$?
 
       echo "--- :arrow_up: Uploading test results"
       buildkite-agent artifact upload "build/test-results/**/*.xml"
       buildkite-agent artifact upload "build/reports/tests/**/*"
+
+      exit ${EXIT_CODE:-0}
     artifact_paths:
       - "build/test-results/**/*.xml"
       - "build/reports/tests/**/*"
@@ -35,6 +37,8 @@ steps:
       - test-collector#v1.10.2:
           files: "build/test-results/test/*.xml"
           format: "junit"
+    soft_fail:
+      - exit_status: "*"
     timeout_in_minutes: 20
     retry:
       automatic:
@@ -49,11 +53,13 @@ steps:
       npm install
 
       echo "--- :jest: Running Jest tests"
-      npm run test:ci
+      npm run test:ci || EXIT_CODE=$?
 
       echo "--- :arrow_up: Uploading test results and coverage"
       buildkite-agent artifact upload "test-results/**/*.xml"
       buildkite-agent artifact upload "coverage/**/*"
+
+      exit ${EXIT_CODE:-0}
     artifact_paths:
       - "test-results/**/*.xml"
       - "coverage/**/*"
@@ -61,6 +67,8 @@ steps:
       - test-collector#v1.10.2:
           files: "test-results/jest/*.xml"
           format: "junit"
+    soft_fail:
+      - exit_status: "*"
     timeout_in_minutes: 10
     retry:
       automatic:
