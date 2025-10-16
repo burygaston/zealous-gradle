@@ -9,8 +9,14 @@ steps:
       queue: "bk-hosted"
     command: |
       echo "--- :mag: Setting up Java environment"
-      # Find and set JAVA_HOME dynamically
-      export JAVA_HOME=$(dirname $(dirname $(readlink -f $(which java))))
+      # Find Java installation
+      if command -v java &> /dev/null; then
+        export JAVA_HOME=$(dirname $(dirname $(readlink -f $(which java))))
+      else
+        # Fallback: search for Java in common locations
+        export JAVA_HOME=$(find /usr/lib/jvm -maxdepth 1 -name '*java-21*' -o -name '*corretto*' | head -1)
+      fi
+
       export PATH="$JAVA_HOME/bin:$PATH"
       echo "JAVA_HOME set to: $JAVA_HOME"
       java -version
@@ -33,7 +39,12 @@ steps:
     agents:
       queue: "bk-hosted"
     command: |
-      export JAVA_HOME=$(dirname $(dirname $(readlink -f $(which java))))
+      # Find Java installation
+      if command -v java &> /dev/null; then
+        export JAVA_HOME=$(dirname $(dirname $(readlink -f $(which java))))
+      else
+        export JAVA_HOME=$(find /usr/lib/jvm -maxdepth 1 -name '*java-21*' -o -name '*corretto*' | head -1)
+      fi
       export PATH="$JAVA_HOME/bin:$PATH"
 
       echo "--- :test_tube: Running Java unit tests"
