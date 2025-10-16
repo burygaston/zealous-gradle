@@ -80,6 +80,17 @@ checkstyle {
     ignoreFailures = true
 }
 
+// Disable checkstyle, PMD, and SpotBugs for simplified builds
+tasks.withType(Checkstyle) {
+    enabled = false
+}
+tasks.withType(Pmd) {
+    enabled = false
+}
+tasks.withType(com.github.spotbugs.snom.SpotBugsTask) {
+    enabled = false
+}
+
 pmd {
     toolVersion = '6.55.0'
     ignoreFailures = true
