@@ -1,6 +1,8 @@
 env:
   GRADLE_OPTS: "-Dorg.gradle.daemon=false -Dorg.gradle.parallel=true"
   BUILDKITE_ANALYTICS_TOKEN: "VXzdR2LfZPQ93FXXetcCcsJW"
+  JAVA_HOME: "/usr/lib/jvm/java-21-amazon-corretto"
+  PATH: "/usr/lib/jvm/java-21-amazon-corretto/bin:${PATH}"
 
 steps:
   - label: ":gradle: Build Project"

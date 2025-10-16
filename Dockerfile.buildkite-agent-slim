@@ -25,6 +25,11 @@ RUN curl -fsSL https://apt.corretto.aws/corretto.key | apt-key add - && \
 ENV JAVA_HOME=/usr/lib/jvm/java-21-amazon-corretto
 ENV PATH="${JAVA_HOME}/bin:${PATH}"
 
+# Add Java to system-wide environment for all shell sessions
+RUN echo 'export JAVA_HOME=/usr/lib/jvm/java-21-amazon-corretto' >> /etc/profile.d/java.sh && \
+    echo 'export PATH=$JAVA_HOME/bin:$PATH' >> /etc/profile.d/java.sh && \
+    chmod +x /etc/profile.d/java.sh
+
 # Configure Gradle for CI environment
 RUN mkdir -p /root/.gradle && \
     echo "org.gradle.daemon=false" >> /root/.gradle/gradle.properties && \
