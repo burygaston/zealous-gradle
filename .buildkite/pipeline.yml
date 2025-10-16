@@ -18,11 +18,11 @@ steps:
       - "build/libs/*.jar"
     timeout_in_minutes: 15
 
-  - label: ":test_tube: Run Tests"
-    key: "test"
+  - label: ":test_tube: Run Java Tests"
+    key: "test-java"
     depends_on: "build"
     command: |
-      echo "--- :test_tube: Running unit tests"
+      echo "--- :test_tube: Running Java unit tests"
       ./gradlew test --no-daemon
 
       echo "--- :arrow_up: Uploading test results"
@@ -40,6 +40,22 @@ steps:
       automatic:
         - exit_status: "*"
           limit: 2
+
+  - label: ":jest: Run JavaScript Tests"
+    key: "test-js"
+    depends_on: "build"
+    command: |
+      echo "--- :nodejs: Installing Node.js dependencies"
+      npm install
+
+      echo "--- :jest: Running Jest tests"
+      npm test -- --ci --coverage
+
+      echo "--- :arrow_up: Uploading test results and coverage"
+      buildkite-agent artifact upload "coverage/**/*"
+    artifact_paths:
+      - "coverage/**/*"
+    timeout_in_minutes: 10
 
   - wait
 
@@ -104,8 +120,8 @@ steps:
 
       The following artifacts were generated:
       - \`task-manager-1.0.0.jar\` - Application JAR file
-      - Test results (XML format)
-      - Test reports (HTML format)
+      - Java test results (110 tests - XML and HTML format)
+      - JavaScript test results (100 tests - coverage reports)
       - Docker image (see Docker Image Published annotation)
 
       Download from the **Artifacts** tab above.

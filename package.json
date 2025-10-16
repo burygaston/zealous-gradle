@@ -1,0 +1,29 @@
+{
+  "name": "task-manager-frontend",
+  "version": "1.0.0",
+  "description": "Frontend tests for Task Manager application",
+  "scripts": {
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage"
+  },
+  "jest": {
+    "testEnvironment": "jsdom",
+    "coverageDirectory": "coverage",
+    "collectCoverageFrom": [
+      "src/main/resources/static/js/**/*.js"
+    ],
+    "testMatch": [
+      "**/src/test/javascript/**/*.test.js"
+    ],
+    "setupFilesAfterEnv": [
+      "<rootDir>/src/test/javascript/setup.js"
+    ]
+  },
+  "devDependencies": {
+    "@testing-library/dom": "^9.3.4",
+    "@testing-library/jest-dom": "^6.1.5",
+    "jest": "^29.7.0",
+    "jest-environment-jsdom": "^29.7.0"
+  }
+}
