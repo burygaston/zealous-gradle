@@ -1,7 +1,6 @@
 package com.taskmanager.config;
 
 import com.taskmanager.service.UserService;
-import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Lazy;
@@ -19,10 +18,7 @@ import org.springframework.security.web.SecurityFilterChain;
  */
 @Configuration
 @EnableWebSecurity
-@RequiredArgsConstructor
 public class SecurityConfig {
-
-    private final @Lazy UserService userService;
 
     /**
      * Configures the password encoder with BCrypt strength 10.
@@ -37,10 +33,11 @@ public class SecurityConfig {
     /**
      * Configures the authentication provider.
      *
+     * @param userService the user service (injected lazily to break circular dependency)
      * @return DAO authentication provider
      */
     @Bean
-    public DaoAuthenticationProvider authenticationProvider() {
+    public DaoAuthenticationProvider authenticationProvider(@Lazy UserService userService) {
         DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
         authProvider.setUserDetailsService(userService);
         authProvider.setPasswordEncoder(passwordEncoder());
@@ -63,13 +60,14 @@ public class SecurityConfig {
      * Configures the security filter chain.
      *
      * @param http HTTP security
+     * @param userService the user service (injected lazily to break circular dependency)
      * @return security filter chain
      * @throws Exception if configuration fails
      */
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain filterChain(HttpSecurity http, @Lazy UserService userService) throws Exception {
         http
-            .authenticationProvider(authenticationProvider())
+            .authenticationProvider(authenticationProvider(userService))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/css/**", "/js/**", "/images/**").permitAll()
                 .requestMatchers("/login", "/error").permitAll()
