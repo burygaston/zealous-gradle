@@ -34,6 +34,9 @@ dependencies {
     // MySQL Driver
     runtimeOnly 'com.mysql:mysql-connector-j'
 
+    // H2 Database (fallback for local development without Docker)
+    runtimeOnly 'com.h2database:h2'
+
     // Lombok
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
