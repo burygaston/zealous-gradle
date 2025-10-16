@@ -787,3 +787,83 @@ describe('Additional Edge Case Tests', () => {
     expect(parsed.id).toBe(1);
   });
 });
+
+describe('Flaky Tests', () => {
+  const FLAKY_PROBABILITY = 0.275; // 27.5% failure rate
+
+  test('Flaky Test 1: Random assertion', () => {
+    if (Math.random() < FLAKY_PROBABILITY) {
+      throw new Error('Flaky test failed randomly');
+    }
+    expect(true).toBe(true);
+  });
+
+  test('Flaky Test 2: Timing sensitive', () => {
+    const timestamp = Date.now();
+    if (timestamp % 4 === 0) { // ~25% failure rate
+      throw new Error('Flaky test failed due to timing');
+    }
+    expect(true).toBe(true);
+  });
+
+  test('Flaky Test 3: Random number comparison', () => {
+    const value = Math.floor(Math.random() * 100);
+    if (value < 27) { // ~27% failure rate
+      throw new Error(`Random value was too low: ${value}`);
+    }
+    expect(value).toBeGreaterThanOrEqual(0);
+  });
+
+  test('Flaky Test 4: Probabilistic assertion', () => {
+    if (Math.random() < FLAKY_PROBABILITY) {
+      expect(1).toBe(2); // Will fail
+    }
+    expect(this).toBeDefined();
+  });
+
+  test('Flaky Test 5: Async timing', async () => {
+    await new Promise(resolve => setTimeout(resolve, Math.random() * 10));
+    if (Date.now() % 4 === 0) { // ~25% failure rate
+      throw new Error('Async timing caused failure');
+    }
+    expect(true).toBe(true);
+  });
+
+  test('Flaky Test 6: Random boolean', () => {
+    const shouldFail = Math.floor(Math.random() * 100) < 28; // ~28% failure rate
+    if (shouldFail) {
+      throw new Error('Random boolean caused failure');
+    }
+    expect(true).toBe(true);
+  });
+
+  test('Flaky Test 7: Array length check', () => {
+    const length = Math.floor(Math.random() * 100);
+    if (length < 26) { // ~26% failure rate
+      throw new Error(`Array length check failed: ${length}`);
+    }
+    expect(length).toBeGreaterThanOrEqual(0);
+  });
+
+  test('Flaky Test 8: State dependent', () => {
+    if (Math.random() < FLAKY_PROBABILITY) {
+      expect(true).toBe(false); // Will fail
+    }
+    expect(true).toBe(true);
+  });
+
+  test('Flaky Test 9: Concurrent operation', () => {
+    const value = Math.floor(Math.random() * 4);
+    if (value === 0) { // ~25% failure rate
+      throw new Error('Concurrent operation failed');
+    }
+    expect(value).toBeGreaterThanOrEqual(0);
+  });
+
+  test('Flaky Test 10: Resource availability', () => {
+    if (Date.now() % 4 === 1) { // ~25% failure rate
+      throw new Error('Resource not available');
+    }
+    expect(true).toBe(true);
+  });
+});
