@@ -30,6 +30,10 @@ steps:
     artifact_paths:
       - "build/test-results/**/*.xml"
       - "build/reports/tests/**/*"
+    plugins:
+      - test-collector#v1.10.2:
+          files: "build/test-results/test/*.xml"
+          format: "junit"
     timeout_in_minutes: 20
     retry:
       automatic:
