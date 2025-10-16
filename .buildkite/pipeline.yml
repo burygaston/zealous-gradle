@@ -49,15 +49,97 @@ steps:
       npm install
 
       echo "--- :jest: Running Jest tests"
-      npm test -- --ci --coverage
+      npm run test:ci
 
       echo "--- :arrow_up: Uploading test results and coverage"
+      buildkite-agent artifact upload "test-results/**/*.xml"
       buildkite-agent artifact upload "coverage/**/*"
     artifact_paths:
+      - "test-results/**/*.xml"
       - "coverage/**/*"
+    plugins:
+      - test-collector#v1.10.2:
+          files: "test-results/jest/*.xml"
+          format: "junit"
     timeout_in_minutes: 10
+    retry:
+      automatic:
+        - exit_status: "*"
+          limit: 2
 
   - wait
+
+  - label: ":bar_chart: Test Results Summary"
+    key: "test-summary"
+    command: |
+      echo "--- :inbox_tray: Downloading test artifacts"
+      buildkite-agent artifact download "build/test-results/**/*.xml" . || true
+      buildkite-agent artifact download "test-results/**/*.xml" . || true
+
+      echo "--- :chart_with_upwards_trend: Parsing test results"
+
+      # Parse Java test results
+      JAVA_TOTAL=$(find build/test-results -name "*.xml" -exec grep -h "tests=" {} \; 2>/dev/null | sed 's/.*tests="\([0-9]*\)".*/\1/' | awk '{s+=$1} END {print s+0}')
+      JAVA_FAILURES=$(find build/test-results -name "*.xml" -exec grep -h "failures=" {} \; 2>/dev/null | sed 's/.*failures="\([0-9]*\)".*/\1/' | awk '{s+=$1} END {print s+0}')
+      JAVA_ERRORS=$(find build/test-results -name "*.xml" -exec grep -h "errors=" {} \; 2>/dev/null | sed 's/.*errors="\([0-9]*\)".*/\1/' | awk '{s+=$1} END {print s+0}')
+      JAVA_SKIPPED=$(find build/test-results -name "*.xml" -exec grep -h "skipped=" {} \; 2>/dev/null | sed 's/.*skipped="\([0-9]*\)".*/\1/' | awk '{s+=$1} END {print s+0}')
+      JAVA_PASSED=$((JAVA_TOTAL - JAVA_FAILURES - JAVA_ERRORS - JAVA_SKIPPED))
+
+      # Parse JavaScript test results
+      JS_TOTAL=$(find test-results -name "*.xml" -exec grep -h "tests=" {} \; 2>/dev/null | sed 's/.*tests="\([0-9]*\)".*/\1/' | awk '{s+=$1} END {print s+0}')
+      JS_FAILURES=$(find test-results -name "*.xml" -exec grep -h "failures=" {} \; 2>/dev/null | sed 's/.*failures="\([0-9]*\)".*/\1/' | awk '{s+=$1} END {print s+0}')
+      JS_ERRORS=$(find test-results -name "*.xml" -exec grep -h "errors=" {} \; 2>/dev/null | sed 's/.*errors="\([0-9]*\)".*/\1/' | awk '{s+=$1} END {print s+0}')
+      JS_SKIPPED=$(find test-results -name "*.xml" -exec grep -h "skipped=" {} \; 2>/dev/null | sed 's/.*skipped="\([0-9]*\)".*/\1/' | awk '{s+=$1} END {print s+0}')
+      JS_PASSED=$((JS_TOTAL - JS_FAILURES - JS_ERRORS - JS_SKIPPED))
+
+      # Calculate totals
+      TOTAL_TESTS=$((JAVA_TOTAL + JS_TOTAL))
+      TOTAL_PASSED=$((JAVA_PASSED + JS_PASSED))
+      TOTAL_FAILED=$((JAVA_FAILURES + JAVA_ERRORS + JS_FAILURES + JS_ERRORS))
+      TOTAL_SKIPPED=$((JAVA_SKIPPED + JS_SKIPPED))
+
+      # Determine annotation style
+      if [ $TOTAL_FAILED -gt 0 ]; then
+        STYLE="error"
+        STATUS_EMOJI="❌"
+        STATUS_TEXT="Tests Failed"
+      else
+        STYLE="success"
+        STATUS_EMOJI="✅"
+        STATUS_TEXT="All Tests Passed"
+      fi
+
+      echo "--- :memo: Creating test results annotation"
+      cat <<EOF | buildkite-agent annotate --style "$STYLE" --context "test-results"
+      ## $STATUS_EMOJI $STATUS_TEXT
+
+      ### 📊 Overall Summary
+      - **Total Tests**: $TOTAL_TESTS
+      - **Passed**: $TOTAL_PASSED ✅
+      - **Failed**: $TOTAL_FAILED ❌
+      - **Skipped**: $TOTAL_SKIPPED ⏭️
+
+      ---
+
+      ### ☕ Java Tests
+      - **Total**: $JAVA_TOTAL
+      - **Passed**: $JAVA_PASSED ✅
+      - **Failed**: $((JAVA_FAILURES + JAVA_ERRORS)) ❌
+      - **Skipped**: $JAVA_SKIPPED ⏭️
+
+      ### 🟨 JavaScript Tests
+      - **Total**: $JS_TOTAL
+      - **Passed**: $JS_PASSED ✅
+      - **Failed**: $((JS_FAILURES + JS_ERRORS)) ❌
+      - **Skipped**: $JS_SKIPPED ⏭️
+
+      ---
+
+      📈 View detailed test analytics in [Buildkite Test Suite](https://buildkite.com/organizations/~/analytics)
+      EOF
+
+      echo "--- :white_check_mark: Test summary created"
+    timeout_in_minutes: 5
 
   - label: ":docker: Build & Push Docker Image"
     key: "docker"
@@ -120,8 +202,8 @@ steps:
 
       The following artifacts were generated:
       - \`task-manager-1.0.0.jar\` - Application JAR file
-      - Java test results (110 tests - XML and HTML format)
-      - JavaScript test results (100 tests - coverage reports)
+      - Java test results (120 tests including 10 flaky - XML and HTML format)
+      - JavaScript test results (110 tests including 10 flaky - JUnit XML and coverage reports)
       - Docker image (see Docker Image Published annotation)
 
       Download from the **Artifacts** tab above.

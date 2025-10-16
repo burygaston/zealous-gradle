@@ -70,5 +70,6 @@ application-local.yml
 # Node.js / Jest
 node_modules/
 coverage/
+test-results/
 package-lock.json
 yarn.lock
