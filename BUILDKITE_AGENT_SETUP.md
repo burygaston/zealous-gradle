@@ -18,12 +18,11 @@ Buildkite hosted agents require a custom Docker image. We provide two Dockerfile
 ### Slim Image (Recommended)
 **File**: `Dockerfile.buildkite-agent-slim`
 
-This is an optimized image based on Ubuntu 22.04 with:
-- Amazon Corretto Java 21 (faster to download)
-- Node.js 20.x
-- Docker CLI
-- GitHub CLI
-- Optimized Gradle configuration
+This image is built on top of the official Buildkite hosted agent base image:
+- **Base**: `buildkite/hosted-agent-base:ubuntu-v1.0.1` (includes git, docker, curl, wget, etc.)
+- **Added**: Amazon Corretto Java 21
+- **Added**: Node.js 20.x
+- **Configured**: Optimized Gradle settings for CI
 
 **Build and push the image:**
 
@@ -144,8 +143,8 @@ docker run --rm -v $(pwd):/workspace -w /workspace task-manager-agent bash -c "
 
 ## Image Sizes
 
-- **Slim image**: ~1.2 GB (optimized for CI)
-- **Full image**: ~1.5 GB (includes Buildkite agent)
+- **Slim image**: ~800 MB (builds on Buildkite base image + Java + Node.js)
+- **Full image**: ~1.5 GB (includes Buildkite agent binary)
 
 ## Troubleshooting
 
