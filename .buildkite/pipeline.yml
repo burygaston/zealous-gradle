@@ -28,7 +28,7 @@ steps:
       lsblk || echo "lsblk not available"
 
       echo "--- :network: Network Interfaces"
-      ip addr || ifconfig
+      ip addr 2>/dev/null || ifconfig 2>/dev/null || echo "Network tools not available"
 
       echo "--- :package: Installed Packages (sampling)"
       if command -v dpkg &> /dev/null; then
@@ -56,15 +56,15 @@ steps:
     agents:
       queue: "bk-hosted"
     command: |
-      echo "--- :mag: Setting up Java environment"
-      # Find Java installation
-      if command -v java &> /dev/null; then
-        export JAVA_HOME=$(dirname $(dirname $(readlink -f $(which java))))
-      else
-        # Fallback: search for Java in common locations
-        export JAVA_HOME=$(find /usr/lib/jvm -maxdepth 1 -name '*java-21*' -o -name '*corretto*' | head -1)
-      fi
+      echo "--- :wrench: Installing Java 21"
+      # Install Java 21 (Amazon Corretto)
+      wget -O- https://apt.corretto.aws/corretto.key | sudo apt-key add -
+      sudo add-apt-repository 'deb https://apt.corretto.aws stable main' -y
+      sudo apt-get update
+      sudo apt-get install -y java-21-amazon-corretto-jdk
 
+      echo "--- :mag: Setting up Java environment"
+      export JAVA_HOME=/usr/lib/jvm/java-21-amazon-corretto
       export PATH="$JAVA_HOME/bin:$PATH"
       echo "JAVA_HOME set to: $JAVA_HOME"
       java -version
@@ -87,12 +87,13 @@ steps:
     agents:
       queue: "bk-hosted"
     command: |
-      # Find Java installation
-      if command -v java &> /dev/null; then
-        export JAVA_HOME=$(dirname $(dirname $(readlink -f $(which java))))
-      else
-        export JAVA_HOME=$(find /usr/lib/jvm -maxdepth 1 -name '*java-21*' -o -name '*corretto*' | head -1)
-      fi
+      echo "--- :wrench: Installing Java 21"
+      wget -O- https://apt.corretto.aws/corretto.key | sudo apt-key add -
+      sudo add-apt-repository 'deb https://apt.corretto.aws stable main' -y
+      sudo apt-get update
+      sudo apt-get install -y java-21-amazon-corretto-jdk
+
+      export JAVA_HOME=/usr/lib/jvm/java-21-amazon-corretto
       export PATH="$JAVA_HOME/bin:$PATH"
 
       echo "--- :test_tube: Running Java unit tests"
@@ -124,6 +125,10 @@ steps:
     agents:
       queue: "bk-hosted"
     command: |
+      echo "--- :wrench: Installing Node.js 20.x"
+      curl -fsSL https://deb.nodesource.com/setup_20.x | sudo bash -
+      sudo apt-get install -y nodejs
+
       echo "--- :nodejs: Installing Node.js dependencies"
       npm install
 
