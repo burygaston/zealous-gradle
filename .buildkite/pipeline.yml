@@ -146,6 +146,12 @@ steps:
           - "20"
     env:
       NODE_VERSION: "{{matrix.node_version}}"
+      # Buildkite Test Engine configuration
+      BUILDKITE_TEST_ENGINE_SUITE_SLUG: "javascript-tests-node{{matrix.node_version}}"
+      BUILDKITE_TEST_ENGINE_TEST_RUNNER: "jest"
+      BUILDKITE_TEST_ENGINE_RESULT_PATH: "test-results/bktec-result.json"
+      # API token must be set in Buildkite UI, not in code:
+      # BUILDKITE_TEST_ENGINE_API_ACCESS_TOKEN (set in Pipeline Settings → Environment Variables)
     plugins:
       - test-collector#v1.10.2:
           files: "test-results/jest/*.xml"
@@ -183,8 +189,23 @@ steps:
       echo "--- :nodejs: Installing dependencies"
       time npm install
 
-      echo "--- :jest: Running Jest tests with Node ${NODE_VERSION}"
-      npm run test:ci || EXIT_CODE=$?
+      echo "--- :package: Installing Buildkite Test Engine Client (bktec)"
+      # Download bktec for Linux AMD64 (hosted agents)
+      curl -Lf -o bktec https://github.com/buildkite/test-engine-client/releases/latest/download/bktec-linux-amd64
+      chmod +x bktec
+      echo "bktec version: $(./bktec --version)"
+
+      echo "--- :jest: Running Jest tests with Node ${NODE_VERSION} via bktec"
+      # Check if Test Engine token is configured
+      if [ -z "${BUILDKITE_TEST_ENGINE_API_ACCESS_TOKEN}" ]; then
+        echo "⚠️  BUILDKITE_TEST_ENGINE_API_ACCESS_TOKEN not set - running tests without bktec"
+        npm run test:ci || EXIT_CODE=$?
+      else
+        echo "✅ Test Engine token configured - running with bktec"
+        echo "Suite: ${BUILDKITE_TEST_ENGINE_SUITE_SLUG:-javascript-tests}"
+        # Run Jest through bktec for test analytics and splitting
+        ./bktec || EXIT_CODE=$?
+      fi
 
       echo "--- :arrow_up: Uploading test results"
       buildkite-agent artifact upload "test-results/**/*.xml"
