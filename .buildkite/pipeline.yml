@@ -3,51 +3,78 @@ env:
   BUILDKITE_ANALYTICS_TOKEN: "VXzdR2LfZPQ93FXXetcCcsJW"
 
 steps:
-  - label: ":gradle: Build Project"
+  - label: ":gradle: Build Project (Local)"
     key: "build"
     agents:
-      queue: "bk-hosted"
+      queue: "default"  # Self-hosted/local agent
     command: |
-      echo "--- :wrench: Installing Java 21"
-      curl -fsSL https://apt.corretto.aws/corretto.key | sudo gpg --dearmor --yes -o /usr/share/keyrings/corretto-keyring.gpg
-      echo "deb [signed-by=/usr/share/keyrings/corretto-keyring.gpg] https://apt.corretto.aws stable main" | sudo tee /etc/apt/sources.list.d/corretto.list
-      sudo apt-get update -qq
-      sudo apt-get install -y java-21-amazon-corretto-jdk
+      echo "--- :computer: Agent Information"
+      echo "Queue: ${BUILDKITE_AGENT_META_DATA_QUEUE:-default}"
+      echo "Agent: ${BUILDKITE_AGENT_NAME}"
+      echo "Hostname: $(hostname)"
+      echo "OS: $(uname -s)"
+      echo "Working Directory: $(pwd)"
 
-      echo "--- :mag: Java environment"
-      export JAVA_HOME=/usr/lib/jvm/java-21-amazon-corretto
-      export PATH="$JAVA_HOME/bin:$PATH"
-      java -version
+      echo "--- :mag: Gradle Cache Information (BEFORE)"
+      echo "Gradle User Home: ${GRADLE_USER_HOME:-~/.gradle}"
+      if [ -d ~/.gradle/caches ]; then
+        echo "Gradle cache size: $(du -sh ~/.gradle/caches 2>/dev/null | cut -f1)"
+        echo "Gradle cache entries: $(find ~/.gradle/caches -type f 2>/dev/null | wc -l)"
+      else
+        echo "No Gradle cache found - first build will download dependencies"
+      fi
 
       echo "--- :package: Installing dependencies"
-      ./gradlew dependencies --no-daemon
+      echo "Running: ./gradlew dependencies"
+      time ./gradlew dependencies --no-daemon
+
+      echo "--- :mag: Gradle Cache Information (AFTER dependencies)"
+      if [ -d ~/.gradle/caches ]; then
+        echo "Gradle cache size: $(du -sh ~/.gradle/caches 2>/dev/null | cut -f1)"
+        echo "Gradle cache entries: $(find ~/.gradle/caches -type f 2>/dev/null | wc -l)"
+      fi
 
       echo "--- :hammer: Building project"
-      ./gradlew clean build -x test --no-daemon
+      echo "Running: ./gradlew clean build -x test"
+      time ./gradlew clean build -x test --no-daemon
 
-      echo "--- :arrow_up: Uploading JAR artifact"
+      echo "--- :package: Build Artifacts Created"
+      echo "JAR files:"
+      ls -lh build/libs/*.jar || echo "No JAR files found"
+      echo ""
+      echo "Compiled classes:"
+      du -sh build/classes 2>/dev/null || echo "No compiled classes"
+      echo ""
+      echo "Total build directory size: $(du -sh build | cut -f1)"
+
+      echo "--- :arrow_up: Uploading artifacts to Buildkite"
+      echo "These artifacts will be available to ALL steps (local and hosted)"
       buildkite-agent artifact upload "build/libs/*.jar"
+      echo "Uploaded: build/libs/*.jar"
     artifact_paths:
       - "build/libs/*.jar"
     timeout_in_minutes: 15
 
-  - label: ":test_tube: Run Java Tests"
+  - label: ":test_tube: Run Java Tests (Local)"
     key: "test-java"
     depends_on: "build"
     agents:
-      queue: "bk-hosted"
+      queue: "default"  # Self-hosted/local agent
     command: |
-      echo "--- :wrench: Installing Java 21"
-      curl -fsSL https://apt.corretto.aws/corretto.key | sudo gpg --dearmor --yes -o /usr/share/keyrings/corretto-keyring.gpg
-      echo "deb [signed-by=/usr/share/keyrings/corretto-keyring.gpg] https://apt.corretto.aws stable main" | sudo tee /etc/apt/sources.list.d/corretto.list
-      sudo apt-get update -qq
-      sudo apt-get install -y java-21-amazon-corretto-jdk
+      echo "--- :computer: Agent Information"
+      echo "Queue: ${BUILDKITE_AGENT_META_DATA_QUEUE:-default}"
+      echo "Agent: ${BUILDKITE_AGENT_NAME}"
+      echo "Hostname: $(hostname)"
 
-      export JAVA_HOME=/usr/lib/jvm/java-21-amazon-corretto
-      export PATH="$JAVA_HOME/bin:$PATH"
+      echo "--- :mag: Gradle Cache Check"
+      echo "Cache reused from build step (same local agent)"
+      if [ -d ~/.gradle/caches ]; then
+        echo "Gradle cache size: $(du -sh ~/.gradle/caches 2>/dev/null | cut -f1)"
+      fi
 
       echo "--- :test_tube: Running Java unit tests"
-      ./gradlew test --no-daemon || EXIT_CODE=$?
+      echo "Running: ./gradlew test"
+      time ./gradlew test --no-daemon || EXIT_CODE=$?
 
       echo "--- :arrow_up: Uploading test results"
       buildkite-agent artifact upload "build/test-results/**/*.xml"
@@ -69,13 +96,21 @@ steps:
         - exit_status: "*"
           limit: 2
 
-  - label: ":jest: Run JavaScript Tests"
+  - label: ":jest: Run JavaScript Tests (Hosted)"
     key: "test-js"
     depends_on: "build"
     agents:
-      queue: "bk-hosted"
+      queue: "bk-hosted"  # Hosted agent
     command: |
+      echo "--- :computer: Agent Information"
+      echo "Queue: bk-hosted (Buildkite Hosted Agent)"
+      echo "Agent: ${BUILDKITE_AGENT_NAME}"
+      echo "Hostname: $(hostname)"
+      echo "OS: $(uname -s)"
+      echo "Working Directory: $(pwd)"
+
       echo "--- :wrench: Installing Node.js 20.x"
+      echo "NOTE: Hosted agents don't persist npm cache between builds"
       curl -fsSL https://deb.nodesource.com/setup_20.x | sudo bash -
       sudo apt-get install -y nodejs
 
@@ -83,8 +118,27 @@ steps:
       node --version
       npm --version
 
+      echo "--- :mag: NPM Cache Information (BEFORE)"
+      echo "NPM cache location: $(npm config get cache)"
+      if [ -d ~/.npm ]; then
+        echo "NPM cache size: $(du -sh ~/.npm 2>/dev/null | cut -f1)"
+      else
+        echo "No NPM cache - will download all dependencies"
+      fi
+
       echo "--- :nodejs: Installing Node.js dependencies"
-      npm install
+      echo "Running: npm install"
+      echo "This downloads ALL dependencies on hosted agents (no cache persistence)"
+      time npm install
+
+      echo "--- :mag: NPM Cache Information (AFTER)"
+      if [ -d ~/.npm ]; then
+        echo "NPM cache size: $(du -sh ~/.npm 2>/dev/null | cut -f1)"
+        echo "NOTE: This cache will be discarded when agent terminates"
+      fi
+
+      echo "--- :package: node_modules size"
+      du -sh node_modules 2>/dev/null || echo "No node_modules"
 
       echo "--- :jest: Running Jest tests"
       npm run test:ci || EXIT_CODE=$?
@@ -185,19 +239,38 @@ steps:
       echo "--- :white_check_mark: Test summary created"
     timeout_in_minutes: 5
 
-  - label: ":docker: Build & Push Docker Image"
+  - label: ":docker: Build & Push Docker Image (Hosted)"
     key: "docker"
     agents:
-      queue: "bk-hosted"
+      queue: "bk-hosted"  # Hosted agent with Docker
     command: |
-      echo "--- :docker: Building Docker image"
+      echo "--- :computer: Agent Information"
+      echo "Queue: bk-hosted (Buildkite Hosted Agent)"
+      echo "Agent: ${BUILDKITE_AGENT_NAME}"
+      echo "Hostname: $(hostname)"
 
+      echo "--- :inbox_tray: Downloading JAR artifact from local build"
+      echo "Artifacts built on LOCAL agent, downloaded to HOSTED agent"
+      echo "Artifact storage: Buildkite's cloud storage"
+      ls -lh build/libs/ 2>/dev/null && echo "WARNING: Unexpected existing files" || echo "No existing files (expected)"
+
+      echo "Downloading..."
+      buildkite-agent artifact download "build/libs/*.jar" .
+
+      echo "Downloaded artifacts:"
+      ls -lh build/libs/*.jar
+      echo "File size: $(du -sh build/libs/*.jar | cut -f1)"
+      echo "NOTE: This JAR was built on a LOCAL agent, transferred via Buildkite"
+
+      echo "--- :docker: Building Docker image"
+      echo "Docker cache: Hosted agents have Docker layer cache within same build"
       # Set image tag with build number and commit
       IMAGE_TAG="${BUILDKITE_BUILD_NUMBER}-${BUILDKITE_COMMIT:0:7}"
       DOCKER_IMAGE="${DOCKERHUB_USERNAME:-taskmanager}/task-manager"
 
       # Build the Docker image
-      docker build -t ${DOCKER_IMAGE}:${IMAGE_TAG} -t ${DOCKER_IMAGE}:latest .
+      echo "Running: docker build"
+      time docker build -t ${DOCKER_IMAGE}:${IMAGE_TAG} -t ${DOCKER_IMAGE}:latest .
 
       echo "--- :arrow_up: Pushing to DockerHub"
 
