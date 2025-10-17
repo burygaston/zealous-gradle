@@ -105,10 +105,10 @@ steps:
       # Cache plugin - will attempt to cache node_modules
       # Expected to fail without S3/GCS backend configured
       - gencer/cache#v2.4.10:
-          manifest: "package-lock.json"
-          key: "npm-cache-{{ runner.os }}-{{ checksum 'package-lock.json' }}"
+          id: npm
+          key: "npm-v1-{{ runner.os }}-{{ checksum 'package-lock.json' }}"
           restore-keys:
-            - "npm-cache-{{ runner.os }}-"
+            - "npm-v1-{{ runner.os }}-"
           paths:
             - "node_modules"
       - test-collector#v1.10.2:
@@ -241,8 +241,8 @@ steps:
       # Cache plugin for Docker build context (optional)
       # Container cache (enabled in Buildkite UI) handles Docker layers
       - gencer/cache#v2.4.10:
-          manifest: "Dockerfile"
-          key: "docker-buildcontext-{{ runner.os }}-{{ checksum 'Dockerfile' }}"
+          id: docker
+          key: "docker-v1-{{ runner.os }}-{{ checksum 'Dockerfile' }}"
           paths:
             - ".dockerignore"
     command: |
