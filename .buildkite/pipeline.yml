@@ -134,21 +134,16 @@ steps:
         - exit_status: "*"
           limit: 2
 
-  - label: ":jest: Run JavaScript Tests (Hosted) - Node {{matrix.node_version}}"
-    key: "test-js"
+  - label: ":jest: Run JavaScript Tests (Hosted) - Node 18"
+    key: "test-js-node18"
     depends_on: "build"
-    parallelism: 4  # Split tests across 4 agents per matrix job
+    parallelism: 4  # Split tests across 4 agents
     agents:
       queue: "bk-hosted"  # Hosted agent
-    matrix:
-      setup:
-        node_version:
-          - "18"
-          - "20"
     env:
-      NODE_VERSION: "{{matrix.node_version}}"
+      NODE_VERSION: "18"
       # Buildkite Test Engine configuration
-      BUILDKITE_TEST_ENGINE_SUITE_SLUG: "javascript-tests-node{{matrix.node_version}}"
+      BUILDKITE_TEST_ENGINE_SUITE_SLUG: "javascript-tests-node18"
       BUILDKITE_TEST_ENGINE_TEST_RUNNER: "jest"
       BUILDKITE_TEST_ENGINE_RESULT_PATH: "test-results/bktec-result.json"
       # API token must be set in Buildkite UI, not in code:
@@ -169,11 +164,126 @@ steps:
       echo "Job ID: ${BUILDKITE_JOB_ID}"
       echo "Build ID: ${BUILDKITE_BUILD_ID}"
       echo ""
-      echo "--- :information_source: Matrix + Parallelism Setup"
-      echo "This job is part of a matrix build with parallelism:"
-      echo "• Matrix dimension: Node ${NODE_VERSION} (2 total: Node 18, Node 20)"
-      echo "• Parallelism: 4 agents per matrix job"
-      echo "• Total agents: 2 matrix × 4 parallelism = 8 agents running simultaneously"
+      echo "--- :information_source: Parallelism + Multi-Version Setup"
+      echo "This build tests across multiple Node versions with parallelism:"
+      echo "• Node versions: 18 and 20 (separate steps)"
+      echo "• Parallelism: 4 agents per Node version"
+      echo "• Total agents: 2 versions × 4 parallelism = 8 agents running simultaneously"
+      echo "• This specific agent: Node ${NODE_VERSION}, parallel job $${BUILDKITE_PARALLEL_JOB}/$${BUILDKITE_PARALLEL_JOB_COUNT}"
+      echo ""
+
+      echo "--- :wrench: Installing Node.js ${NODE_VERSION}.x"
+      echo "Testing with Node.js ${NODE_VERSION}"
+
+      # Install the specific Node.js version
+      curl -fsSL https://deb.nodesource.com/setup_${NODE_VERSION}.x | sudo bash - >/dev/null 2>&1
+      sudo apt-get install -y nodejs >/dev/null 2>&1
+
+      echo "Node.js $(node --version) | npm $(npm --version)"
+
+      # Verify we got the right version
+      INSTALLED_VERSION=$(node --version | cut -d'v' -f2 | cut -d'.' -f1)
+      echo "Installed Node.js major version: ${INSTALLED_VERSION}"
+      if [ "${INSTALLED_VERSION}" != "${NODE_VERSION}" ]; then
+        echo "⚠️  Warning: Expected Node ${NODE_VERSION}, got Node ${INSTALLED_VERSION}"
+      else
+        echo "✅ Correct Node.js version installed"
+      fi
+
+      echo "--- :nodejs: Installing dependencies"
+      time npm install
+
+      echo "--- :package: Installing Buildkite Test Engine Client (bktec)"
+      # Get latest version and download bktec for Linux AMD64
+      BKTEC_VERSION=$(curl -s https://api.github.com/repos/buildkite/test-engine-client/releases/latest | grep '"tag_name"' | cut -d'"' -f4)
+      echo "Latest bktec version: $${BKTEC_VERSION}"
+      # Strip 'v' prefix from version tag for filename
+      BKTEC_VERSION_NUMBER=$(echo "$${BKTEC_VERSION}" | sed 's/^v//')
+      curl -Lf -o bktec "https://github.com/buildkite/test-engine-client/releases/download/$${BKTEC_VERSION}/bktec_$${BKTEC_VERSION_NUMBER}_linux_amd64"
+      chmod +x bktec
+      echo "bktec version: $(./bktec --version)"
+
+      echo "--- :jest: Running Jest tests with Node ${NODE_VERSION} via bktec"
+      # Check if Test Engine token is configured
+      if [ -z "${BUILDKITE_TEST_ENGINE_API_ACCESS_TOKEN}" ]; then
+        echo "⚠️  BUILDKITE_TEST_ENGINE_API_ACCESS_TOKEN not set - running tests without bktec"
+        echo "Running ALL tests on this agent (no intelligent splitting)"
+        npm run test:ci || EXIT_CODE=$?
+      else
+        echo "✅ Test Engine token configured - running with bktec"
+        echo "Suite: ${BUILDKITE_TEST_ENGINE_SUITE_SLUG:-javascript-tests}"
+        echo "Parallel job: $${BUILDKITE_PARALLEL_JOB}/$${BUILDKITE_PARALLEL_JOB_COUNT}"
+        echo ""
+        echo "bktec will intelligently split tests across the 4 parallel agents based on:"
+        echo "• Historical test timing data"
+        echo "• Test file sizes"
+        echo "• Previous run durations"
+        echo "• Balanced distribution to minimize total run time"
+        echo ""
+        echo "Expected: ~25-30 tests per agent (out of ~100 total)"
+        echo ""
+
+        # Run Jest through bktec for test analytics and splitting
+        ./bktec || EXIT_CODE=$?
+
+        echo ""
+        echo "--- :chart_with_upwards_trend: Test Execution Summary"
+        echo "Parallel job $${BUILDKITE_PARALLEL_JOB}/$${BUILDKITE_PARALLEL_JOB_COUNT} completed"
+        echo "Results will be aggregated across all 4 parallel agents"
+        echo "View complete analytics in Buildkite Test Engine for suite: ${BUILDKITE_TEST_ENGINE_SUITE_SLUG}"
+      fi
+
+      echo "--- :arrow_up: Uploading test results"
+      buildkite-agent artifact upload "test-results/**/*.xml"
+      buildkite-agent artifact upload "coverage/**/*"
+
+      exit ${EXIT_CODE:-0}
+    artifact_paths:
+      - "test-results/**/*.xml"
+      - "coverage/**/*"
+    soft_fail:
+      - exit_status: "*"
+    timeout_in_minutes: 10
+    retry:
+      automatic:
+        - exit_status: "*"
+          limit: 2
+
+  - label: ":jest: Run JavaScript Tests (Hosted) - Node 20"
+    key: "test-js-node20"
+    depends_on: "build"
+    parallelism: 4  # Split tests across 4 agents
+    agents:
+      queue: "bk-hosted"  # Hosted agent
+    env:
+      NODE_VERSION: "20"
+      # Buildkite Test Engine configuration
+      BUILDKITE_TEST_ENGINE_SUITE_SLUG: "javascript-tests-node20"
+      BUILDKITE_TEST_ENGINE_TEST_RUNNER: "jest"
+      BUILDKITE_TEST_ENGINE_RESULT_PATH: "test-results/bktec-result.json"
+      # API token must be set in Buildkite UI, not in code:
+      # BUILDKITE_TEST_ENGINE_API_ACCESS_TOKEN (set in Pipeline Settings → Environment Variables)
+    plugins:
+      - test-collector#v1.10.2:
+          files: "test-results/jest/*.xml"
+          format: "junit"
+    command: |
+      echo "--- :computer: Agent & Environment Information"
+      echo "Matrix: Node ${NODE_VERSION}"
+      echo "Parallelism: Job $${BUILDKITE_PARALLEL_JOB} of $${BUILDKITE_PARALLEL_JOB_COUNT}"
+      echo "Agent ID: ${BUILDKITE_AGENT_ID}"
+      echo "Agent Name: ${BUILDKITE_AGENT_NAME}"
+      echo "Hostname: $(hostname)"
+      echo "Container ID: $(cat /proc/self/cgroup | head -n 1 | cut -d '/' -f3 | cut -c1-12 || echo 'N/A')"
+      echo "IP Address: $(hostname -I | awk '{print $1}' || echo 'N/A')"
+      echo "Job ID: ${BUILDKITE_JOB_ID}"
+      echo "Build ID: ${BUILDKITE_BUILD_ID}"
+      echo ""
+      echo "--- :information_source: Parallelism + Multi-Version Setup"
+      echo "This build tests across multiple Node versions with parallelism:"
+      echo "• Node versions: 18 and 20 (separate steps)"
+      echo "• Parallelism: 4 agents per Node version"
+      echo "• Total agents: 2 versions × 4 parallelism = 8 agents running simultaneously"
       echo "• This specific agent: Node ${NODE_VERSION}, parallel job $${BUILDKITE_PARALLEL_JOB}/$${BUILDKITE_PARALLEL_JOB_COUNT}"
       echo ""
 
