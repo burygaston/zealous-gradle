@@ -102,28 +102,10 @@ steps:
     agents:
       queue: "bk-hosted"  # Hosted agent
     plugins:
-      # Cache plugin - will attempt to cache node_modules
-      # Expected to fail without S3/GCS backend configured
-      - gencer/cache#v2.4.10:
-          id: npm
-          key: "npm-v1-{{ runner.os }}-{{ checksum 'package-lock.json' }}"
-          restore-keys:
-            - "npm-v1-{{ runner.os }}-"
-          paths:
-            - "node_modules"
       - test-collector#v1.10.2:
           files: "test-results/jest/*.xml"
           format: "junit"
     command: |
-      echo "--- :package: Cache Status"
-      if [ -d node_modules ]; then
-        FILE_COUNT=$(find node_modules -type f 2>/dev/null | wc -l | xargs)
-        SIZE=$(du -sh node_modules 2>/dev/null | cut -f1)
-        echo "✅ CACHE HIT: node_modules restored ($FILE_COUNT files, $SIZE)"
-      else
-        echo "❌ CACHE MISS: node_modules not found (will download all dependencies)"
-      fi
-
       echo "--- :wrench: Installing Node.js 20.x"
       curl -fsSL https://deb.nodesource.com/setup_20.x | sudo bash - >/dev/null 2>&1
       sudo apt-get install -y nodejs >/dev/null 2>&1
@@ -131,12 +113,6 @@ steps:
 
       echo "--- :nodejs: Installing dependencies"
       time npm install
-
-      if [ -d node_modules ]; then
-        FILE_COUNT=$(find node_modules -type f 2>/dev/null | wc -l | xargs)
-        SIZE=$(du -sh node_modules 2>/dev/null | cut -f1)
-        echo "node_modules: $FILE_COUNT files, $SIZE (will be cached for next build)"
-      fi
 
       echo "--- :jest: Running Jest tests"
       npm run test:ci || EXIT_CODE=$?
@@ -237,14 +213,6 @@ steps:
     key: "docker"
     agents:
       queue: "bk-hosted"  # Hosted agent with Docker
-    plugins:
-      # Cache plugin for Docker build context (optional)
-      # Container cache (enabled in Buildkite UI) handles Docker layers
-      - gencer/cache#v2.4.10:
-          id: docker
-          key: "docker-v1-{{ runner.os }}-{{ checksum 'Dockerfile' }}"
-          paths:
-            - ".dockerignore"
     command: |
       echo "--- :computer: Agent Information"
       echo "Queue: bk-hosted (Buildkite Hosted Agent)"
