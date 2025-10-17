@@ -137,6 +137,7 @@ steps:
   - label: ":jest: Run JavaScript Tests (Hosted) - Node {{matrix.node_version}}"
     key: "test-js"
     depends_on: "build"
+    parallelism: 4  # Split tests across 4 agents per matrix job
     agents:
       queue: "bk-hosted"  # Hosted agent
     matrix:
@@ -159,6 +160,7 @@ steps:
     command: |
       echo "--- :computer: Agent & Environment Information"
       echo "Matrix: Node ${NODE_VERSION}"
+      echo "Parallelism: Job $${BUILDKITE_PARALLEL_JOB} of $${BUILDKITE_PARALLEL_JOB_COUNT}"
       echo "Agent ID: ${BUILDKITE_AGENT_ID}"
       echo "Agent Name: ${BUILDKITE_AGENT_NAME}"
       echo "Hostname: $(hostname)"
@@ -166,6 +168,13 @@ steps:
       echo "IP Address: $(hostname -I | awk '{print $1}' || echo 'N/A')"
       echo "Job ID: ${BUILDKITE_JOB_ID}"
       echo "Build ID: ${BUILDKITE_BUILD_ID}"
+      echo ""
+      echo "--- :information_source: Matrix + Parallelism Setup"
+      echo "This job is part of a matrix build with parallelism:"
+      echo "• Matrix dimension: Node ${NODE_VERSION} (2 total: Node 18, Node 20)"
+      echo "• Parallelism: 4 agents per matrix job"
+      echo "• Total agents: 2 matrix × 4 parallelism = 8 agents running simultaneously"
+      echo "• This specific agent: Node ${NODE_VERSION}, parallel job $${BUILDKITE_PARALLEL_JOB}/$${BUILDKITE_PARALLEL_JOB_COUNT}"
       echo ""
 
       echo "--- :wrench: Installing Node.js ${NODE_VERSION}.x"
@@ -203,12 +212,30 @@ steps:
       # Check if Test Engine token is configured
       if [ -z "${BUILDKITE_TEST_ENGINE_API_ACCESS_TOKEN}" ]; then
         echo "⚠️  BUILDKITE_TEST_ENGINE_API_ACCESS_TOKEN not set - running tests without bktec"
+        echo "Running ALL tests on this agent (no intelligent splitting)"
         npm run test:ci || EXIT_CODE=$?
       else
         echo "✅ Test Engine token configured - running with bktec"
         echo "Suite: ${BUILDKITE_TEST_ENGINE_SUITE_SLUG:-javascript-tests}"
+        echo "Parallel job: $${BUILDKITE_PARALLEL_JOB}/$${BUILDKITE_PARALLEL_JOB_COUNT}"
+        echo ""
+        echo "bktec will intelligently split tests across the 4 parallel agents based on:"
+        echo "• Historical test timing data"
+        echo "• Test file sizes"
+        echo "• Previous run durations"
+        echo "• Balanced distribution to minimize total run time"
+        echo ""
+        echo "Expected: ~25-30 tests per agent (out of ~100 total)"
+        echo ""
+
         # Run Jest through bktec for test analytics and splitting
         ./bktec || EXIT_CODE=$?
+
+        echo ""
+        echo "--- :chart_with_upwards_trend: Test Execution Summary"
+        echo "Parallel job $${BUILDKITE_PARALLEL_JOB}/$${BUILDKITE_PARALLEL_JOB_COUNT} completed"
+        echo "Results will be aggregated across all 4 parallel agents"
+        echo "View complete analytics in Buildkite Test Engine for suite: ${BUILDKITE_TEST_ENGINE_SUITE_SLUG}"
       fi
 
       echo "--- :arrow_up: Uploading test results"
