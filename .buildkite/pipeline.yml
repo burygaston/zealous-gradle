@@ -111,80 +111,39 @@ steps:
             - "npm-cache-{{ runner.os }}-"
           paths:
             - "node_modules"
-          debug: true  # Enable verbose logging
       - test-collector#v1.10.2:
           files: "test-results/jest/*.xml"
           format: "junit"
     command: |
-      echo "--- :computer: Agent Information"
-      echo "Queue: bk-hosted (Buildkite Hosted Agent)"
-      echo "Agent: ${BUILDKITE_AGENT_NAME}"
-      echo "Hostname: $(hostname)"
-      echo "OS: $(uname -s)"
-      echo "Working Directory: $(pwd)"
-
-      echo "--- :package: Cache Plugin Status"
-      echo "Cache plugin attempted to restore node_modules (see plugin output above)"
+      echo "--- :package: Cache Status"
       if [ -d node_modules ]; then
-        echo "✅ node_modules exists (cache hit or partial restore)"
-        echo "Size: $(du -sh node_modules 2>/dev/null | cut -f1)"
-        echo "Entry count: $(find node_modules -type f 2>/dev/null | wc -l)"
+        FILE_COUNT=$(find node_modules -type f 2>/dev/null | wc -l | xargs)
+        SIZE=$(du -sh node_modules 2>/dev/null | cut -f1)
+        echo "✅ CACHE HIT: node_modules restored ($FILE_COUNT files, $SIZE)"
       else
-        echo "❌ node_modules not found (cache miss or plugin failed)"
-        echo "Will download all dependencies from scratch"
+        echo "❌ CACHE MISS: node_modules not found (will download all dependencies)"
       fi
 
       echo "--- :wrench: Installing Node.js 20.x"
-      echo "NOTE: Hosted agents don't persist npm cache between builds"
-      curl -fsSL https://deb.nodesource.com/setup_20.x | sudo bash -
-      sudo apt-get install -y nodejs
+      curl -fsSL https://deb.nodesource.com/setup_20.x | sudo bash - >/dev/null 2>&1
+      sudo apt-get install -y nodejs >/dev/null 2>&1
+      echo "Node.js $(node --version) | npm $(npm --version)"
 
-      echo "--- :nodejs: Node.js version"
-      node --version
-      npm --version
-
-      echo "--- :mag: NPM Cache Information (BEFORE npm install)"
-      echo "NPM cache location: $(npm config get cache)"
-      if [ -d ~/.npm ]; then
-        echo "NPM cache size: $(du -sh ~/.npm 2>/dev/null | cut -f1)"
-      else
-        echo "No NPM cache directory"
-      fi
-
-      echo "--- :nodejs: Installing Node.js dependencies"
-      echo "Running: npm install"
-      if [ -d node_modules ]; then
-        echo "Starting with existing node_modules from cache plugin"
-        echo "npm will only install missing/updated packages"
-      else
-        echo "Starting from scratch - will download ALL dependencies"
-      fi
+      echo "--- :nodejs: Installing dependencies"
       time npm install
 
-      echo "--- :mag: Final node_modules state"
       if [ -d node_modules ]; then
-        echo "node_modules size: $(du -sh node_modules 2>/dev/null | cut -f1)"
-        echo "Entry count: $(find node_modules -type f 2>/dev/null | wc -l)"
-        echo "NOTE: Cache plugin will attempt to upload this for next build"
-      fi
-
-      echo "--- :mag: NPM Cache Information (AFTER npm install)"
-      if [ -d ~/.npm ]; then
-        echo "NPM cache size: $(du -sh ~/.npm 2>/dev/null | cut -f1)"
-        echo "NOTE: This npm cache will be discarded when agent terminates"
-        echo "Only node_modules (if successfully uploaded) persists via cache plugin"
+        FILE_COUNT=$(find node_modules -type f 2>/dev/null | wc -l | xargs)
+        SIZE=$(du -sh node_modules 2>/dev/null | cut -f1)
+        echo "node_modules: $FILE_COUNT files, $SIZE (will be cached for next build)"
       fi
 
       echo "--- :jest: Running Jest tests"
       npm run test:ci || EXIT_CODE=$?
 
-      echo "--- :arrow_up: Uploading test results and coverage"
+      echo "--- :arrow_up: Uploading test results"
       buildkite-agent artifact upload "test-results/**/*.xml"
       buildkite-agent artifact upload "coverage/**/*"
-
-      echo "--- :floppy_disk: Cache Plugin Upload"
-      echo "Cache plugin will now attempt to upload node_modules (see plugin output below)"
-      echo "Expected to fail if S3/GCS backend not configured"
 
       exit ${EXIT_CODE:-0}
     artifact_paths:
@@ -286,7 +245,6 @@ steps:
           key: "docker-buildcontext-{{ runner.os }}-{{ checksum 'Dockerfile' }}"
           paths:
             - ".dockerignore"
-          debug: true
     command: |
       echo "--- :computer: Agent Information"
       echo "Queue: bk-hosted (Buildkite Hosted Agent)"
