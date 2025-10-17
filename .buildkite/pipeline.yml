@@ -55,16 +55,49 @@ steps:
       - "build/libs/*.jar"
     timeout_in_minutes: 15
 
-  - label: ":test_tube: Run Java Tests (Local)"
+  - label: ":test_tube: Run Java Tests (Local) - Java {{matrix.java_version}}"
     key: "test-java"
     depends_on: "build"
     agents:
       queue: "default"  # Self-hosted/local agent
+    matrix:
+      setup:
+        java_version:
+          - "17"
+          - "21"
+    env:
+      JAVA_VERSION: "{{matrix.java_version}}"
     command: |
       echo "--- :computer: Agent Information"
       echo "Queue: ${BUILDKITE_AGENT_META_DATA_QUEUE:-default}"
       echo "Agent: ${BUILDKITE_AGENT_NAME}"
       echo "Hostname: $(hostname)"
+      echo "Testing with Java ${JAVA_VERSION}"
+
+      echo "--- :coffee: Setting up Java ${JAVA_VERSION}"
+      # Install Java version if not already available
+      if ! java -version 2>&1 | grep -q "openjdk version \"${JAVA_VERSION}"; then
+        if [ "${JAVA_VERSION}" = "17" ]; then
+          echo "Installing Java 17..."
+          if [[ "$OSTYPE" == "darwin"* ]]; then
+            brew install openjdk@17 || echo "Java 17 already installed"
+            export JAVA_HOME=$(/usr/libexec/java_home -v 17)
+          else
+            sudo apt-get update && sudo apt-get install -y openjdk-17-jdk
+            export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
+          fi
+        elif [ "${JAVA_VERSION}" = "21" ]; then
+          echo "Java 21 already installed (default)"
+          export JAVA_HOME=${JAVA_HOME:-/usr/lib/jvm/java-21-amazon-corretto}
+        fi
+      else
+        echo "Java ${JAVA_VERSION} already available"
+        export JAVA_HOME=$(/usr/libexec/java_home -v ${JAVA_VERSION} 2>/dev/null || echo "/usr/lib/jvm/java-${JAVA_VERSION}-openjdk-amd64")
+      fi
+
+      export PATH="${JAVA_HOME}/bin:${PATH}"
+      echo "JAVA_HOME: ${JAVA_HOME}"
+      java -version
 
       echo "--- :mag: Gradle Cache Check"
       echo "Cache reused from build step (same local agent)"
@@ -72,7 +105,7 @@ steps:
         echo "Gradle cache size: $(du -sh ~/.gradle/caches 2>/dev/null | cut -f1)"
       fi
 
-      echo "--- :test_tube: Running Java unit tests"
+      echo "--- :test_tube: Running Java unit tests with Java ${JAVA_VERSION}"
       echo "Running: ./gradlew test"
       time ./gradlew test --no-daemon || EXIT_CODE=$?
 
@@ -96,25 +129,45 @@ steps:
         - exit_status: "*"
           limit: 2
 
-  - label: ":jest: Run JavaScript Tests (Hosted)"
+  - label: ":jest: Run JavaScript Tests (Hosted) - Node {{matrix.node_version}}"
     key: "test-js"
     depends_on: "build"
     agents:
       queue: "bk-hosted"  # Hosted agent
+    matrix:
+      setup:
+        node_version:
+          - "18"
+          - "20"
+    env:
+      NODE_VERSION: "{{matrix.node_version}}"
     plugins:
       - test-collector#v1.10.2:
           files: "test-results/jest/*.xml"
           format: "junit"
     command: |
-      echo "--- :wrench: Installing Node.js 20.x"
-      curl -fsSL https://deb.nodesource.com/setup_20.x | sudo bash - >/dev/null 2>&1
+      echo "--- :wrench: Installing Node.js ${NODE_VERSION}.x"
+      echo "Testing with Node.js ${NODE_VERSION}"
+
+      # Install the specific Node.js version
+      curl -fsSL https://deb.nodesource.com/setup_${NODE_VERSION}.x | sudo bash - >/dev/null 2>&1
       sudo apt-get install -y nodejs >/dev/null 2>&1
+
       echo "Node.js $(node --version) | npm $(npm --version)"
+
+      # Verify we got the right version
+      INSTALLED_VERSION=$(node --version | cut -d'v' -f2 | cut -d'.' -f1)
+      echo "Installed Node.js major version: ${INSTALLED_VERSION}"
+      if [ "${INSTALLED_VERSION}" != "${NODE_VERSION}" ]; then
+        echo "⚠️  Warning: Expected Node ${NODE_VERSION}, got Node ${INSTALLED_VERSION}"
+      else
+        echo "✅ Correct Node.js version installed"
+      fi
 
       echo "--- :nodejs: Installing dependencies"
       time npm install
 
-      echo "--- :jest: Running Jest tests"
+      echo "--- :jest: Running Jest tests with Node ${NODE_VERSION}"
       npm run test:ci || EXIT_CODE=$?
 
       echo "--- :arrow_up: Uploading test results"
