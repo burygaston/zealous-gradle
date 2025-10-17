@@ -192,8 +192,10 @@ steps:
       echo "--- :package: Installing Buildkite Test Engine Client (bktec)"
       # Get latest version and download bktec for Linux AMD64
       BKTEC_VERSION=$(curl -s https://api.github.com/repos/buildkite/test-engine-client/releases/latest | grep '"tag_name"' | cut -d'"' -f4)
-      echo "Latest bktec version: ${BKTEC_VERSION}"
-      curl -Lf -o bktec "https://github.com/buildkite/test-engine-client/releases/download/${BKTEC_VERSION}/bktec_${BKTEC_VERSION#v}_linux_amd64"
+      echo "Latest bktec version: $${BKTEC_VERSION}"
+      # Strip 'v' prefix from version tag for filename
+      BKTEC_VERSION_NUMBER=$(echo "$${BKTEC_VERSION}" | sed 's/^v//')
+      curl -Lf -o bktec "https://github.com/buildkite/test-engine-client/releases/download/$${BKTEC_VERSION}/bktec_$${BKTEC_VERSION_NUMBER}_linux_amd64"
       chmod +x bktec
       echo "bktec version: $(./bktec --version)"
 
