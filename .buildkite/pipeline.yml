@@ -8,6 +8,12 @@ steps:
     agents:
       queue: "bk-hosted"
     command: |
+      echo "--- :wrench: Installing Java 21"
+      curl -fsSL https://apt.corretto.aws/corretto.key | sudo gpg --dearmor --yes -o /usr/share/keyrings/corretto-keyring.gpg
+      echo "deb [signed-by=/usr/share/keyrings/corretto-keyring.gpg] https://apt.corretto.aws stable main" | sudo tee /etc/apt/sources.list.d/corretto.list
+      sudo apt-get update -qq
+      sudo apt-get install -y java-21-amazon-corretto-jdk
+
       echo "--- :mag: Java environment"
       export JAVA_HOME=/usr/lib/jvm/java-21-amazon-corretto
       export PATH="$JAVA_HOME/bin:$PATH"
@@ -31,6 +37,12 @@ steps:
     agents:
       queue: "bk-hosted"
     command: |
+      echo "--- :wrench: Installing Java 21"
+      curl -fsSL https://apt.corretto.aws/corretto.key | sudo gpg --dearmor --yes -o /usr/share/keyrings/corretto-keyring.gpg
+      echo "deb [signed-by=/usr/share/keyrings/corretto-keyring.gpg] https://apt.corretto.aws stable main" | sudo tee /etc/apt/sources.list.d/corretto.list
+      sudo apt-get update -qq
+      sudo apt-get install -y java-21-amazon-corretto-jdk
+
       export JAVA_HOME=/usr/lib/jvm/java-21-amazon-corretto
       export PATH="$JAVA_HOME/bin:$PATH"
 
@@ -63,6 +75,10 @@ steps:
     agents:
       queue: "bk-hosted"
     command: |
+      echo "--- :wrench: Installing Node.js 20.x"
+      curl -fsSL https://deb.nodesource.com/setup_20.x | sudo bash -
+      sudo apt-get install -y nodejs
+
       echo "--- :nodejs: Node.js version"
       node --version
       npm --version
