@@ -68,11 +68,16 @@ steps:
     env:
       JAVA_VERSION: "{{matrix.java_version}}"
     command: |
-      echo "--- :computer: Agent Information"
+      echo "--- :computer: Agent & Environment Information"
+      echo "Matrix: Java ${JAVA_VERSION}"
       echo "Queue: ${BUILDKITE_AGENT_META_DATA_QUEUE:-default}"
-      echo "Agent: ${BUILDKITE_AGENT_NAME}"
+      echo "Agent ID: ${BUILDKITE_AGENT_ID}"
+      echo "Agent Name: ${BUILDKITE_AGENT_NAME}"
       echo "Hostname: $(hostname)"
-      echo "Testing with Java ${JAVA_VERSION}"
+      echo "Process ID: $$"
+      echo "Job ID: ${BUILDKITE_JOB_ID}"
+      echo "Build ID: ${BUILDKITE_BUILD_ID}"
+      echo ""
 
       echo "--- :coffee: Setting up Java ${JAVA_VERSION}"
       # Install Java version if not already available
@@ -146,6 +151,17 @@ steps:
           files: "test-results/jest/*.xml"
           format: "junit"
     command: |
+      echo "--- :computer: Agent & Environment Information"
+      echo "Matrix: Node ${NODE_VERSION}"
+      echo "Agent ID: ${BUILDKITE_AGENT_ID}"
+      echo "Agent Name: ${BUILDKITE_AGENT_NAME}"
+      echo "Hostname: $(hostname)"
+      echo "Container ID: $(cat /proc/self/cgroup | head -n 1 | cut -d '/' -f3 | cut -c1-12 || echo 'N/A')"
+      echo "IP Address: $(hostname -I | awk '{print $1}' || echo 'N/A')"
+      echo "Job ID: ${BUILDKITE_JOB_ID}"
+      echo "Build ID: ${BUILDKITE_BUILD_ID}"
+      echo ""
+
       echo "--- :wrench: Installing Node.js ${NODE_VERSION}.x"
       echo "Testing with Node.js ${NODE_VERSION}"
 
