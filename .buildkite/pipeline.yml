@@ -143,7 +143,7 @@ steps:
     env:
       NODE_VERSION: "18"
       # Buildkite Test Engine configuration
-      BUILDKITE_TEST_ENGINE_SUITE_SLUG: "javascript-tests-node18"
+      BUILDKITE_TEST_ENGINE_SUITE_SLUG: "zealous-grade-web-app"
       BUILDKITE_TEST_ENGINE_TEST_RUNNER: "jest"
       BUILDKITE_TEST_ENGINE_RESULT_PATH: "test-results/bktec-result.json"
       # API token must be set in Buildkite UI, not in code:
@@ -276,7 +276,7 @@ steps:
     env:
       NODE_VERSION: "20"
       # Buildkite Test Engine configuration
-      BUILDKITE_TEST_ENGINE_SUITE_SLUG: "javascript-tests-node20"
+      BUILDKITE_TEST_ENGINE_SUITE_SLUG: "zealous-grade-web-app"
       BUILDKITE_TEST_ENGINE_TEST_RUNNER: "jest"
       BUILDKITE_TEST_ENGINE_RESULT_PATH: "test-results/bktec-result.json"
       # API token must be set in Buildkite UI, not in code:
