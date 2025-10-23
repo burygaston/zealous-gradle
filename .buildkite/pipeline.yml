@@ -147,8 +147,8 @@ steps:
       BUILDKITE_TEST_ENGINE_SUITE_SLUG: "zealous-grade-web-app"
       BUILDKITE_TEST_ENGINE_TEST_RUNNER: "jest"
       BUILDKITE_TEST_ENGINE_RESULT_PATH: "test-results/bktec-result.json"
-      # API token must be set in Buildkite UI, not in code:
-      # BUILDKITE_TEST_ENGINE_API_ACCESS_TOKEN (set in Pipeline Settings → Environment Variables)
+      # API token from Buildkite secret manager
+      BUILDKITE_TEST_ENGINE_API_ACCESS_TOKEN: "secret://myBktecToken"
     plugins:
       - test-collector#v1.10.2:
           files: "test-results/jest/*.xml"
@@ -281,8 +281,8 @@ steps:
       BUILDKITE_TEST_ENGINE_SUITE_SLUG: "zealous-grade-web-app"
       BUILDKITE_TEST_ENGINE_TEST_RUNNER: "jest"
       BUILDKITE_TEST_ENGINE_RESULT_PATH: "test-results/bktec-result.json"
-      # API token must be set in Buildkite UI, not in code:
-      # BUILDKITE_TEST_ENGINE_API_ACCESS_TOKEN (set in Pipeline Settings → Environment Variables)
+      # API token from Buildkite secret manager
+      BUILDKITE_TEST_ENGINE_API_ACCESS_TOKEN: "secret://myBktecToken"
     plugins:
       - test-collector#v1.10.2:
           files: "test-results/jest/*.xml"
