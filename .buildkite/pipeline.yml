@@ -142,11 +142,6 @@ steps:
       queue: "bk-hosted"  # Hosted agent
     env:
       NODE_VERSION: "18"
-      # Buildkite Test Engine configuration
-      BUILDKITE_ORGANIZATION_SLUG: "zealouspy"
-      BUILDKITE_TEST_ENGINE_SUITE_SLUG: "zealous-grade-web-app"
-      BUILDKITE_TEST_ENGINE_TEST_RUNNER: "jest"
-      BUILDKITE_TEST_ENGINE_RESULT_PATH: "test-results/bktec-result.json"
     plugins:
       - test-collector#v1.10.2:
           files: "test-results/jest/*.xml"
@@ -192,72 +187,13 @@ steps:
       echo "--- :nodejs: Installing dependencies"
       time npm install
 
-      echo "--- :key: Fetching Test Engine API token from cluster secrets"
-      if buildkite-agent secret get myBktecToken 2>/dev/null; then
-        export BUILDKITE_TEST_ENGINE_API_ACCESS_TOKEN=$(buildkite-agent secret get myBktecToken)
-        echo "✅ Secret fetched successfully"
-      else
-        echo "⚠️  Failed to fetch secret from cluster - secret get command not available or failed"
-        echo "Continuing without Test Engine (tests will run without bktec)"
-      fi
-
-      echo "--- :package: Installing Buildkite Test Engine Client (bktec)"
-      # Get latest version and download bktec for Linux AMD64
-      BKTEC_VERSION=$(curl -s https://api.github.com/repos/buildkite/test-engine-client/releases/latest | grep '"tag_name"' | cut -d'"' -f4)
-      echo "Latest bktec version: $${BKTEC_VERSION}"
-      # Strip 'v' prefix from version tag for filename
-      BKTEC_VERSION_NUMBER=$(echo "$${BKTEC_VERSION}" | sed 's/^v//')
-      curl -Lf -o bktec "https://github.com/buildkite/test-engine-client/releases/download/$${BKTEC_VERSION}/bktec_$${BKTEC_VERSION_NUMBER}_linux_amd64"
-      chmod +x bktec
-      echo "bktec version: $(./bktec --version)"
-
-      echo "--- :mag: Buildkite Test Engine Configuration Check"
-      echo "Environment variables:"
-      if [ -z "${BUILDKITE_TEST_ENGINE_API_ACCESS_TOKEN}" ]; then
-        echo "  ❌ BUILDKITE_TEST_ENGINE_API_ACCESS_TOKEN: NOT SET"
-        echo "  ⚠️  Token must be set in Buildkite Pipeline Settings → Environment Variables"
-        echo "  ⚠️  See BUILDKITE_TEST_ENGINE_SETUP.md for instructions"
-      else
-        echo "  ✅ BUILDKITE_TEST_ENGINE_API_ACCESS_TOKEN: SET (hidden)"
-      fi
-      echo "  Suite Slug: ${BUILDKITE_TEST_ENGINE_SUITE_SLUG}"
-      echo "  Test Runner: ${BUILDKITE_TEST_ENGINE_TEST_RUNNER}"
-      echo "  Result Path: ${BUILDKITE_TEST_ENGINE_RESULT_PATH}"
-      echo ""
-      echo "Test Suites must be created in Buildkite Test Engine:"
-      echo "  → https://buildkite.com/organizations/~/test-engine"
-      echo "  Suite slug must match exactly: ${BUILDKITE_TEST_ENGINE_SUITE_SLUG}"
+      echo "--- :jest: Running Jest tests with Node ${NODE_VERSION}"
+      echo "Parallel job: $${BUILDKITE_PARALLEL_JOB}/$${BUILDKITE_PARALLEL_JOB_COUNT}"
+      echo "Note: Running all tests on each parallel agent"
+      echo "(Test Engine client setup deferred - will revisit later)"
       echo ""
 
-      echo "--- :jest: Running Jest tests with Node ${NODE_VERSION} via bktec"
-      # Check if Test Engine token is configured
-      if [ -z "${BUILDKITE_TEST_ENGINE_API_ACCESS_TOKEN}" ]; then
-        echo "⚠️  BUILDKITE_TEST_ENGINE_API_ACCESS_TOKEN not set - running tests without bktec"
-        echo "Running ALL tests on this agent (no intelligent splitting)"
-        npm run test:ci || EXIT_CODE=$?
-      else
-        echo "✅ Test Engine token configured - running with bktec"
-        echo "Suite: ${BUILDKITE_TEST_ENGINE_SUITE_SLUG:-javascript-tests}"
-        echo "Parallel job: $${BUILDKITE_PARALLEL_JOB}/$${BUILDKITE_PARALLEL_JOB_COUNT}"
-        echo ""
-        echo "bktec will intelligently split tests across the 4 parallel agents based on:"
-        echo "• Historical test timing data"
-        echo "• Test file sizes"
-        echo "• Previous run durations"
-        echo "• Balanced distribution to minimize total run time"
-        echo ""
-        echo "Expected: ~25-30 tests per agent (out of ~100 total)"
-        echo ""
-
-        # Run Jest through bktec for test analytics and splitting
-        ./bktec || EXIT_CODE=$?
-
-        echo ""
-        echo "--- :chart_with_upwards_trend: Test Execution Summary"
-        echo "Parallel job $${BUILDKITE_PARALLEL_JOB}/$${BUILDKITE_PARALLEL_JOB_COUNT} completed"
-        echo "Results will be aggregated across all 4 parallel agents"
-        echo "View complete analytics in Buildkite Test Engine for suite: ${BUILDKITE_TEST_ENGINE_SUITE_SLUG}"
-      fi
+      npm run test:ci || EXIT_CODE=$?
 
       echo "--- :arrow_up: Uploading test results"
       buildkite-agent artifact upload "test-results/**/*.xml"
@@ -283,11 +219,6 @@ steps:
       queue: "bk-hosted"  # Hosted agent
     env:
       NODE_VERSION: "20"
-      # Buildkite Test Engine configuration
-      BUILDKITE_ORGANIZATION_SLUG: "zealouspy"
-      BUILDKITE_TEST_ENGINE_SUITE_SLUG: "zealous-grade-web-app"
-      BUILDKITE_TEST_ENGINE_TEST_RUNNER: "jest"
-      BUILDKITE_TEST_ENGINE_RESULT_PATH: "test-results/bktec-result.json"
     plugins:
       - test-collector#v1.10.2:
           files: "test-results/jest/*.xml"
@@ -333,72 +264,13 @@ steps:
       echo "--- :nodejs: Installing dependencies"
       time npm install
 
-      echo "--- :key: Fetching Test Engine API token from cluster secrets"
-      if buildkite-agent secret get myBktecToken 2>/dev/null; then
-        export BUILDKITE_TEST_ENGINE_API_ACCESS_TOKEN=$(buildkite-agent secret get myBktecToken)
-        echo "✅ Secret fetched successfully"
-      else
-        echo "⚠️  Failed to fetch secret from cluster - secret get command not available or failed"
-        echo "Continuing without Test Engine (tests will run without bktec)"
-      fi
-
-      echo "--- :package: Installing Buildkite Test Engine Client (bktec)"
-      # Get latest version and download bktec for Linux AMD64
-      BKTEC_VERSION=$(curl -s https://api.github.com/repos/buildkite/test-engine-client/releases/latest | grep '"tag_name"' | cut -d'"' -f4)
-      echo "Latest bktec version: $${BKTEC_VERSION}"
-      # Strip 'v' prefix from version tag for filename
-      BKTEC_VERSION_NUMBER=$(echo "$${BKTEC_VERSION}" | sed 's/^v//')
-      curl -Lf -o bktec "https://github.com/buildkite/test-engine-client/releases/download/$${BKTEC_VERSION}/bktec_$${BKTEC_VERSION_NUMBER}_linux_amd64"
-      chmod +x bktec
-      echo "bktec version: $(./bktec --version)"
-
-      echo "--- :mag: Buildkite Test Engine Configuration Check"
-      echo "Environment variables:"
-      if [ -z "${BUILDKITE_TEST_ENGINE_API_ACCESS_TOKEN}" ]; then
-        echo "  ❌ BUILDKITE_TEST_ENGINE_API_ACCESS_TOKEN: NOT SET"
-        echo "  ⚠️  Token must be set in Buildkite Pipeline Settings → Environment Variables"
-        echo "  ⚠️  See BUILDKITE_TEST_ENGINE_SETUP.md for instructions"
-      else
-        echo "  ✅ BUILDKITE_TEST_ENGINE_API_ACCESS_TOKEN: SET (hidden)"
-      fi
-      echo "  Suite Slug: ${BUILDKITE_TEST_ENGINE_SUITE_SLUG}"
-      echo "  Test Runner: ${BUILDKITE_TEST_ENGINE_TEST_RUNNER}"
-      echo "  Result Path: ${BUILDKITE_TEST_ENGINE_RESULT_PATH}"
-      echo ""
-      echo "Test Suites must be created in Buildkite Test Engine:"
-      echo "  → https://buildkite.com/organizations/~/test-engine"
-      echo "  Suite slug must match exactly: ${BUILDKITE_TEST_ENGINE_SUITE_SLUG}"
+      echo "--- :jest: Running Jest tests with Node ${NODE_VERSION}"
+      echo "Parallel job: $${BUILDKITE_PARALLEL_JOB}/$${BUILDKITE_PARALLEL_JOB_COUNT}"
+      echo "Note: Running all tests on each parallel agent"
+      echo "(Test Engine client setup deferred - will revisit later)"
       echo ""
 
-      echo "--- :jest: Running Jest tests with Node ${NODE_VERSION} via bktec"
-      # Check if Test Engine token is configured
-      if [ -z "${BUILDKITE_TEST_ENGINE_API_ACCESS_TOKEN}" ]; then
-        echo "⚠️  BUILDKITE_TEST_ENGINE_API_ACCESS_TOKEN not set - running tests without bktec"
-        echo "Running ALL tests on this agent (no intelligent splitting)"
-        npm run test:ci || EXIT_CODE=$?
-      else
-        echo "✅ Test Engine token configured - running with bktec"
-        echo "Suite: ${BUILDKITE_TEST_ENGINE_SUITE_SLUG:-javascript-tests}"
-        echo "Parallel job: $${BUILDKITE_PARALLEL_JOB}/$${BUILDKITE_PARALLEL_JOB_COUNT}"
-        echo ""
-        echo "bktec will intelligently split tests across the 4 parallel agents based on:"
-        echo "• Historical test timing data"
-        echo "• Test file sizes"
-        echo "• Previous run durations"
-        echo "• Balanced distribution to minimize total run time"
-        echo ""
-        echo "Expected: ~25-30 tests per agent (out of ~100 total)"
-        echo ""
-
-        # Run Jest through bktec for test analytics and splitting
-        ./bktec || EXIT_CODE=$?
-
-        echo ""
-        echo "--- :chart_with_upwards_trend: Test Execution Summary"
-        echo "Parallel job $${BUILDKITE_PARALLEL_JOB}/$${BUILDKITE_PARALLEL_JOB_COUNT} completed"
-        echo "Results will be aggregated across all 4 parallel agents"
-        echo "View complete analytics in Buildkite Test Engine for suite: ${BUILDKITE_TEST_ENGINE_SUITE_SLUG}"
-      fi
+      npm run test:ci || EXIT_CODE=$?
 
       echo "--- :arrow_up: Uploading test results"
       buildkite-agent artifact upload "test-results/**/*.xml"
