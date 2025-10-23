@@ -193,7 +193,13 @@ steps:
       time npm install
 
       echo "--- :key: Fetching Test Engine API token from cluster secrets"
-      export BUILDKITE_TEST_ENGINE_API_ACCESS_TOKEN=$(buildkite-agent secret get myBktecToken)
+      if buildkite-agent secret get myBktecToken 2>/dev/null; then
+        export BUILDKITE_TEST_ENGINE_API_ACCESS_TOKEN=$(buildkite-agent secret get myBktecToken)
+        echo "✅ Secret fetched successfully"
+      else
+        echo "⚠️  Failed to fetch secret from cluster - secret get command not available or failed"
+        echo "Continuing without Test Engine (tests will run without bktec)"
+      fi
 
       echo "--- :package: Installing Buildkite Test Engine Client (bktec)"
       # Get latest version and download bktec for Linux AMD64
@@ -328,7 +334,13 @@ steps:
       time npm install
 
       echo "--- :key: Fetching Test Engine API token from cluster secrets"
-      export BUILDKITE_TEST_ENGINE_API_ACCESS_TOKEN=$(buildkite-agent secret get myBktecToken)
+      if buildkite-agent secret get myBktecToken 2>/dev/null; then
+        export BUILDKITE_TEST_ENGINE_API_ACCESS_TOKEN=$(buildkite-agent secret get myBktecToken)
+        echo "✅ Secret fetched successfully"
+      else
+        echo "⚠️  Failed to fetch secret from cluster - secret get command not available or failed"
+        echo "Continuing without Test Engine (tests will run without bktec)"
+      fi
 
       echo "--- :package: Installing Buildkite Test Engine Client (bktec)"
       # Get latest version and download bktec for Linux AMD64
