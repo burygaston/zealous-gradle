@@ -143,6 +143,7 @@ steps:
     env:
       NODE_VERSION: "18"
       # Buildkite Test Engine configuration
+      BUILDKITE_ORGANIZATION_SLUG: "zealouspy"
       BUILDKITE_TEST_ENGINE_SUITE_SLUG: "zealous-grade-web-app"
       BUILDKITE_TEST_ENGINE_TEST_RUNNER: "jest"
       BUILDKITE_TEST_ENGINE_RESULT_PATH: "test-results/bktec-result.json"
@@ -276,6 +277,7 @@ steps:
     env:
       NODE_VERSION: "20"
       # Buildkite Test Engine configuration
+      BUILDKITE_ORGANIZATION_SLUG: "zealouspy"
       BUILDKITE_TEST_ENGINE_SUITE_SLUG: "zealous-grade-web-app"
       BUILDKITE_TEST_ENGINE_TEST_RUNNER: "jest"
       BUILDKITE_TEST_ENGINE_RESULT_PATH: "test-results/bktec-result.json"
