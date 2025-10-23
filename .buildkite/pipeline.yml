@@ -148,9 +148,6 @@ steps:
       BUILDKITE_TEST_ENGINE_TEST_RUNNER: "jest"
       BUILDKITE_TEST_ENGINE_RESULT_PATH: "test-results/bktec-result.json"
     plugins:
-      - secrets#v1.3.0:
-          env:
-            BUILDKITE_TEST_ENGINE_API_ACCESS_TOKEN: myBktecToken
       - test-collector#v1.10.2:
           files: "test-results/jest/*.xml"
           format: "junit"
@@ -194,6 +191,9 @@ steps:
 
       echo "--- :nodejs: Installing dependencies"
       time npm install
+
+      echo "--- :key: Fetching Test Engine API token from cluster secrets"
+      export BUILDKITE_TEST_ENGINE_API_ACCESS_TOKEN=$(buildkite-agent secret get myBktecToken)
 
       echo "--- :package: Installing Buildkite Test Engine Client (bktec)"
       # Get latest version and download bktec for Linux AMD64
@@ -283,9 +283,6 @@ steps:
       BUILDKITE_TEST_ENGINE_TEST_RUNNER: "jest"
       BUILDKITE_TEST_ENGINE_RESULT_PATH: "test-results/bktec-result.json"
     plugins:
-      - secrets#v1.3.0:
-          env:
-            BUILDKITE_TEST_ENGINE_API_ACCESS_TOKEN: myBktecToken
       - test-collector#v1.10.2:
           files: "test-results/jest/*.xml"
           format: "junit"
@@ -329,6 +326,9 @@ steps:
 
       echo "--- :nodejs: Installing dependencies"
       time npm install
+
+      echo "--- :key: Fetching Test Engine API token from cluster secrets"
+      export BUILDKITE_TEST_ENGINE_API_ACCESS_TOKEN=$(buildkite-agent secret get myBktecToken)
 
       echo "--- :package: Installing Buildkite Test Engine Client (bktec)"
       # Get latest version and download bktec for Linux AMD64
