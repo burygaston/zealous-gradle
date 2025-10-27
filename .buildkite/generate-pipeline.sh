@@ -45,7 +45,7 @@ cat <<'YAML'
   - label: ":gradle: Build Project"
     key: "build"
     agents:
-      queue: "default"
+      queue: "bk-hosted"
     env:
       GRADLE_OPTS: "-Dorg.gradle.daemon=false -Dorg.gradle.parallel=true"
     command: |
