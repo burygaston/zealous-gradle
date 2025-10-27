@@ -6,6 +6,9 @@ env:
   BUILDKITE_ANALYTICS_TOKEN: "VXzdR2LfZPQ93FXXetcCcsJW"
 
 steps:
+  - label: ":wave: Hello World"
+    command: echo "Hello! This runs BEFORE the dynamic pipeline generator"
+
   - label: ":pipeline: Generate Dynamic Pipeline"
     agents:
       queue: "default"
