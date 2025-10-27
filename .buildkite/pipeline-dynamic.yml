@@ -1,0 +1,23 @@
+# Dynamic Pipeline for Task Manager Project
+# This pipeline generates steps intelligently based on what changed
+
+env:
+  GRADLE_OPTS: "-Dorg.gradle.daemon=false -Dorg.gradle.parallel=true"
+  BUILDKITE_ANALYTICS_TOKEN: "VXzdR2LfZPQ93FXXetcCcsJW"
+
+steps:
+  - label: ":pipeline: Generate Dynamic Pipeline"
+    command: |
+      echo "--- :gear: Dynamic Pipeline Generator"
+      echo "This step analyzes your changes and generates an optimized pipeline"
+      echo ""
+      echo "Branch: ${BUILDKITE_BRANCH}"
+      echo "Commit: ${BUILDKITE_COMMIT:0:7}"
+      echo "Author: ${BUILDKITE_BUILD_AUTHOR}"
+      echo ""
+
+      chmod +x .buildkite/generate-pipeline.sh
+      .buildkite/generate-pipeline.sh | buildkite-agent pipeline upload
+
+      echo ""
+      echo ":white_check_mark: Pipeline generated and uploaded successfully!"
