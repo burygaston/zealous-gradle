@@ -7,6 +7,8 @@ env:
 
 steps:
   - label: ":pipeline: Generate Dynamic Pipeline"
+    agents:
+      queue: "bk-hosted"
     command: |
       echo "--- :gear: Dynamic Pipeline Generator"
       echo "This step analyzes your changes and generates an optimized pipeline"
