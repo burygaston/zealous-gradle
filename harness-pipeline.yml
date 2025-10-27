@@ -1,0 +1,215 @@
+pipeline:
+  projectIdentifier: Shiv
+  orgIdentifier: default
+  tags: {}
+  properties:
+    ci:
+      codebase:
+        connectorRef: gastonburygithub
+        repoName: zealous-gradle
+        build: <+input>
+        sparseCheckout: []
+  stages:
+    - stage:
+        name: build-sift
+        identifier: buildsift
+        description: ""
+        type: CI
+        spec:
+          cloneCodebase: true
+          caching:
+            enabled: true
+            paths: []
+          buildIntelligence:
+            enabled: true
+          platform:
+            os: Linux
+            arch: Amd64
+          runtime:
+            type: Cloud
+            spec: {}
+          execution:
+            steps:
+              - step:
+                  type: Action
+                  name: java setup
+                  identifier: java_setup
+                  spec:
+                    uses: actions/setup-java@v3
+                    with:
+                      java-version: "21"
+                      distribution: temurin
+              - step:
+                  type: Run
+                  name: gradle build
+                  identifier: gradle_build
+                  spec:
+                    shell: Sh
+                    command: ./gradlew clean build -x test --continue --profile
+                    outputVariables:
+                      - name: myErrorCode
+                        type: String
+                        value: myErrorCode
+                      - name: myErrorMessage
+                        type: String
+                        value: myErrorMessage
+              - step:
+                  type: BuildAndPushDockerRegistry
+                  name: docker build only
+                  identifier: BuildAndPushDockerRegistry_1
+                  spec:
+                    connectorRef: shivlokaharnessdocker
+                    repo: shivloka1harness/sift
+                    tags:
+                      - zealous-new-<+pipeline.sequenceId>
+                    caching: true
+                    envVariables:
+                      PLUGIN_NO_PUSH: "true"
+                      DOCKER_CONTENT_TRUST: "1"
+                  when:
+                    stageStatus: Success
+              - parallel:
+                  - step:
+                      type: BuildAndPushDockerRegistry
+                      name: Docker Push only
+                      identifier: BuildAndPushDockerRegistry_2
+                      spec:
+                        connectorRef: shivlokaharnessdocker
+                        repo: shivloka1harness/sift
+                        tags:
+                          - zealous-new-nopush-<+pipeline.sequenceId>-build-x
+                        envVariables:
+                          PLUGIN_PUSH_ONLY: "true"
+                          PLUGIN_SOURCE_IMAGE: shivloka1harness/sift/new-nopush-<+pipeline.sequenceId>-build-x
+                      when:
+                        stageStatus: Success
+              - step:
+                  type: Run
+                  name: list built image
+                  identifier: list_built_image
+                  spec:
+                    shell: Sh
+                    command: docker images
+                  when:
+                    stageStatus: Success
+                    condition: "false"
+              - step:
+                  type: Run
+                  name: check gradle folder
+                  identifier: check_gradle_folder
+                  spec:
+                    shell: Sh
+                    command: |-
+                      sh
+                      ls -al /root/
+                      ls -al .gradle
+                  when:
+                    stageStatus: Success
+                    condition: "false"
+        variables:
+          - name: slokaTestSecret
+            type: Secret
+            description: ""
+            required: true
+            value: sloka-test-secret
+          - name: PLUGIN_BUILDX_LOAD
+            type: String
+            description: ""
+            required: false
+            value: "true"
+        strategy:
+          parallelism: 2
+        when:
+          pipelineStatus: Success
+          condition: "false"
+    - stage:
+        name: test-sift
+        identifier: testsift
+        description: ""
+        type: CI
+        spec:
+          cloneCodebase: true
+          caching:
+            enabled: true
+            override: false
+          buildIntelligence:
+            enabled: true
+          platform:
+            os: Linux
+            arch: Amd64
+          runtime:
+            type: Cloud
+            spec: {}
+          execution:
+            steps:
+              - step:
+                  type: Action
+                  name: java setup
+                  identifier: java_setup
+                  spec:
+                    uses: actions/setup-java@v3
+                    with:
+                      java-version: <+matrix.javaVersion>
+                      distribution: temurin
+              - step:
+                  type: Test
+                  name: java tests
+                  identifier: java_tests
+                  spec:
+                    shell: Sh
+                    command: |-
+                      echo "Running Java tests with version: <+matrix.javaVersion>"
+                      echo "Running: ./gradlew test"
+                      ./gradlew test --no-daemon
+                    reports:
+                      type: JUnit
+                      spec:
+                        paths:
+                          - build/test-results/test/*.xml
+                    intelligenceMode: true
+                  strategy:
+                    parallelism: 2
+              - step:
+                  type: Test
+                  name: javascript_tests
+                  identifier: javascript_tests
+                  spec:
+                    shell: Sh
+                    command: npm run test:ci || EXIT_CODE=$?
+                    reports:
+                      type: JUnit
+                      spec:
+                        paths:
+                          - test-results/jest/*.xml
+                    intelligenceMode: true
+                  when:
+                    stageStatus: Success
+                    condition: "false"
+        strategy:
+          matrix:
+            javaVersion:
+              - "17"
+              - "21"
+  allowStageExecutions: true
+  notificationRules:
+    - name: sift-notifications
+      identifier: siftnotifications
+      pipelineEvents:
+        - type: StageFailed
+          forStages:
+            - testsift
+        - type: StageSuccess
+          forStages:
+            - testsift
+        - type: StageStart
+          forStages:
+            - testsift
+      notificationMethod:
+        type: Slack
+        spec:
+          userGroups: []
+          webhookUrl: https://hooks.slack.com/triggers/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
+      enabled: true
+  timeout: 1w
+  identifier: test_Clone
+  name: sift-test-pipeline - Clone

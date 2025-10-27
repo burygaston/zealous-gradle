@@ -129,6 +129,16 @@ public class WorkItemController {
     }
 
     /**
+     * Health check endpoint for monitoring work item service availability.
+     *
+     * @return health status response
+     */
+    @GetMapping("/health")
+    public ResponseEntity<String> healthCheck() {
+        return ResponseEntity.ok("WorkItem service is healthy and operational");
+    }
+
+    /**
      * Helper method to get the authenticated user.
      *
      * @param authentication the authentication object
