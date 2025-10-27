@@ -76,7 +76,7 @@ if [[ $JAVA_CHANGED -gt 0 || $GRADLE_CHANGED -gt 0 ]]; then
     key: "test-java"
     depends_on: "build"
     agents:
-      queue: "default"
+      queue: "bk-hosted"
     matrix:
       setup:
         java_version:
