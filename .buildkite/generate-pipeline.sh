@@ -45,7 +45,7 @@ cat <<'YAML'
   - label: ":gradle: Build Project"
     key: "build"
     agents:
-      queue: "bk-hosted"
+      queue: "default"
     env:
       GRADLE_OPTS: "-Dorg.gradle.daemon=false -Dorg.gradle.parallel=true"
     command: |
@@ -76,7 +76,7 @@ if [[ $JAVA_CHANGED -gt 0 || $GRADLE_CHANGED -gt 0 ]]; then
     key: "test-java"
     depends_on: "build"
     agents:
-      queue: "bk-hosted"
+      queue: "default"
     matrix:
       setup:
         java_version:
@@ -127,7 +127,7 @@ if [[ $JS_CHANGED -gt 0 || $PACKAGE_CHANGED -gt 0 ]]; then
     depends_on: "build"
     parallelism: 4
     agents:
-      queue: "bk-hosted"
+      queue: "default"
     env:
       NODE_VERSION: "$NODE_VERSION"
     plugins:
@@ -186,7 +186,7 @@ cat <<'YAML'
   - label: ":bar_chart: Test Results Summary"
     key: "test-summary"
     agents:
-      queue: "bk-hosted"
+      queue: "default"
     command: |
       echo "--- :chart_with_upwards_trend: Test execution completed"
       echo "All test results have been collected and uploaded"
@@ -201,7 +201,7 @@ if [[ $DOCKER_CHANGED -gt 0 || "$BUILDKITE_BRANCH" == "main" ]]; then
   - label: ":docker: Build & Push Docker Image"
     key: "docker"
     agents:
-      queue: "bk-hosted"
+      queue: "default"
     command: |
       echo "--- :inbox_tray: Downloading JAR artifact"
       buildkite-agent artifact download "build/libs/*.jar" .
