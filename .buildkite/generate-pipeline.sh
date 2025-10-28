@@ -7,7 +7,7 @@
 
 set -euo pipefail
 
-echo "--- :mag: Analyzing changes to generate optimal pipeline"
+echo "--- :mag: Analyzing changes to generate optimal pipeline" >&2
 
 # Detect what changed (compare to main branch or previous commit)
 if git rev-parse --verify origin/main >/dev/null 2>&1; then
@@ -18,9 +18,9 @@ fi
 
 CHANGED_FILES=$(git diff --name-only "$COMPARISON_REF" 2>/dev/null || echo "")
 
-echo "Changed files since $COMPARISON_REF:"
-echo "$CHANGED_FILES" | sed 's/^/  - /'
-echo ""
+echo "Changed files since $COMPARISON_REF:" >&2
+echo "$CHANGED_FILES" | sed 's/^/  - /' >&2
+echo "" >&2
 
 # Detect what components changed
 JAVA_CHANGED=$(echo "$CHANGED_FILES" | grep -c '\.java$' || echo "0")
@@ -29,13 +29,13 @@ DOCKER_CHANGED=$(echo "$CHANGED_FILES" | grep -c 'Dockerfile' || echo "0")
 GRADLE_CHANGED=$(echo "$CHANGED_FILES" | grep -c 'build.gradle\|settings.gradle\|gradlew' || echo "0")
 PACKAGE_CHANGED=$(echo "$CHANGED_FILES" | grep -c 'package.json\|package-lock.json' || echo "0")
 
-echo "Component change detection:"
-echo "  Java files: $JAVA_CHANGED"
-echo "  JavaScript files: $JS_CHANGED"
-echo "  Docker files: $DOCKER_CHANGED"
-echo "  Gradle files: $GRADLE_CHANGED"
-echo "  Package files: $PACKAGE_CHANGED"
-echo ""
+echo "Component change detection:" >&2
+echo "  Java files: $JAVA_CHANGED" >&2
+echo "  JavaScript files: $JS_CHANGED" >&2
+echo "  Docker files: $DOCKER_CHANGED" >&2
+echo "  Gradle files: $GRADLE_CHANGED" >&2
+echo "  Package files: $PACKAGE_CHANGED" >&2
+echo "" >&2
 
 # Start generating pipeline
 echo "steps:"
@@ -269,5 +269,5 @@ else
 YAML
 fi
 
-echo ""
-echo "--- :white_check_mark: Dynamic pipeline generated successfully!"
+echo "" >&2
+echo "--- :white_check_mark: Dynamic pipeline generated successfully!" >&2
