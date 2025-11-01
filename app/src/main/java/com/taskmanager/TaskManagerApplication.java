@@ -1,5 +1,6 @@
 package com.taskmanager;
 
+import com.taskmanager.common.CommonUtil;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
@@ -15,6 +16,7 @@ public class TaskManagerApplication {
      * @param args command line arguments
      */
     public static void main(String[] args) {
+        CommonUtil.newMethod();
         SpringApplication.run(TaskManagerApplication.class, args);
     }
 }

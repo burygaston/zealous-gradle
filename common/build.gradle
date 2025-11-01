@@ -5,6 +5,11 @@ plugins {
 group = 'com.taskmanager'
 version = '1.0.0'
 
+java {
+    sourceCompatibility = '17'
+    targetCompatibility = '17'
+}
+
 repositories {
     mavenCentral()
 }
