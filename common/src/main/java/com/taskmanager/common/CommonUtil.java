@@ -13,6 +13,6 @@ public class CommonUtil {
      * Example utility method.
      */
     public static String getAppName() {
-        return "Task Manager";
+        return "Hello from Task Manager";
     }
 }
