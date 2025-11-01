@@ -1,1 +1,6 @@
-rootProject.name = 'task-manager'
+// settings.gradle
+rootProject.name = 'zealous-gradle'
+
+// This defines your two modules
+include 'app'
+include 'common'
