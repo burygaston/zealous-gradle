@@ -15,4 +15,8 @@ public class CommonUtil {
     public static String getAppName() {
         return "Hello from Task Manager";
     }
+
+    public static void newMethod() {
+        System.out.println("This is a new V3 method!");
+    }
 }
