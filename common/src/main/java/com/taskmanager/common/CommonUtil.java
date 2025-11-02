@@ -19,4 +19,8 @@ public class CommonUtil {
     public static void newMethod() {
         System.out.println("This is a new V3 method!");
     }
+
+    public static void newMethodV5() {
+        System.out.println("This is a new V5 method!");
+    }
 }
