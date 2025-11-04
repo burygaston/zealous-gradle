@@ -30,6 +30,8 @@ Located in `app/build/reports/cucumber/`:
 
 ### Step 1: Run Tests with Harness TI
 
+**Important**: Use `--continue` flag to ensure all tests run and reports are generated even if some tests fail.
+
 ```yaml
 - step:
     type: RunTests
@@ -38,13 +40,17 @@ Located in `app/build/reports/cucumber/`:
     spec:
       language: Java
       buildTool: Gradle
-      args: clean test
+      args: test --continue --no-daemon
       packages: com.taskmanager
       runOnlySelectedTests: true
       postCommand: |-
+        # Debug: Verify reports were generated
+        echo "=== Generated Test Reports ==="
+        find app/build/test-results/test -name "*.xml" -type f -ls || echo "No XML files found"
+
         # Optional: Archive Cucumber HTML reports
-        mkdir -p /harness/reports
-        cp -r app/build/reports/cucumber /harness/reports/ || true
+        mkdir -p /harness/cucumber-reports
+        cp -r app/build/reports/cucumber/* /harness/cucumber-reports/ 2>/dev/null || true
       reports:
         type: JUnit
         spec:
@@ -52,6 +58,8 @@ Located in `app/build/reports/cucumber/`:
             - "app/build/test-results/test/*.xml"
       enableTestSplitting: false
 ```
+
+**Note**: The `--continue` flag ensures Gradle generates XML reports even when tests fail, preventing the "no tests found" error.
 
 ### Step 2: View Results
 
@@ -173,6 +181,16 @@ open app/build/reports/cucumber/cucumber-report.html
 
 ## Troubleshooting
 
+### Issue: "no tests found in the summary"
+
+This is the most common error. **Solution**: Add `--continue` flag to your Gradle args:
+
+```yaml
+args: test --continue --no-daemon
+```
+
+This ensures reports are generated even if tests fail. See [HARNESS_TI_TROUBLESHOOTING.md](./HARNESS_TI_TROUBLESHOOTING.md) for detailed solutions.
+
 ### Issue: Cucumber tests not appearing in Harness TI
 
 **Solution**: Verify the JUnit XML is being generated:
@@ -196,6 +214,14 @@ Or in Harness:
 ```yaml
 args: test --tests "*RunCucumberTest"
 ```
+
+### Need More Help?
+
+See the comprehensive [HARNESS_TI_TROUBLESHOOTING.md](./HARNESS_TI_TROUBLESHOOTING.md) guide for:
+- Detailed error solutions
+- Alternative pipeline configurations
+- Debug commands
+- Path pattern examples
 
 ## Summary
 
