@@ -71,6 +71,13 @@ dependencies {
     testImplementation 'io.cucumber:cucumber-java:7.14.0'
     testImplementation 'io.cucumber:cucumber-junit-platform-engine:7.14.0'
     testImplementation 'org.junit.platform:junit-platform-suite:1.10.0'
+
+    // Selenium WebDriver
+    testImplementation 'org.seleniumhq.selenium:selenium-java:4.15.0'
+    testImplementation 'io.github.bonigarcia:webdrivermanager:5.6.2'
+
+    // TestNG
+    testImplementation 'org.testng:testng:7.8.0'
 }
 
 tasks.named('test') {
@@ -141,4 +148,53 @@ task prepareArtifacts(type: Copy) {
 
 tasks.withType(JavaCompile) {
     options.compilerArgs << '-parameters'
+}
+
+// TestNG task for Selenium tests
+task testng(type: Test) {
+    description = 'Run TestNG tests (Selenium UI tests)'
+    group = 'verification'
+
+    useTestNG() {
+        // Use testng.xml suite file if present
+        suites file('src/test/resources/testng.xml')
+
+        // Generate JUnit XML reports for Harness TI
+        useDefaultListeners = true
+        outputDirectory = file("$buildDir/test-results/testng")
+    }
+
+    testLogging {
+        events "passed", "skipped", "failed"
+        exceptionFormat "full"
+        showStandardStreams = false
+    }
+
+    reports {
+        junitXml.required = true
+        junitXml.outputLocation = file("$buildDir/test-results/testng")
+        html.required = true
+        html.outputLocation = file("$buildDir/reports/testng")
+    }
+
+    // System properties for WebDriverManager
+    systemProperty 'wdm.cachePath', "${System.getProperty('user.home')}/.cache/selenium"
+    systemProperty 'webdriver.chrome.driver', ''
+
+    // Exclude TestNG tests from regular 'test' task
+    exclude '**/*SeleniumTest*'
+    exclude '**/*UITest*'
+}
+
+// Exclude TestNG tests from JUnit test task
+test {
+    exclude '**/*SeleniumTest*'
+    exclude '**/*UITest*'
+}
+
+// Task to run all tests (JUnit + Cucumber + TestNG)
+task testAll {
+    description = 'Run all tests: JUnit, Cucumber, and TestNG'
+    group = 'verification'
+    dependsOn test, testng
 }
