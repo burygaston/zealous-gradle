@@ -1,13 +1,13 @@
 pipeline:
-  name: ZealousGradle - Test Intelligence
-  identifier: zealousgradle_test_intelligence
+  name: ZealousGradle - Multi-Framework Test Intelligence
+  identifier: zealousgradle_multi_framework_ti
   projectIdentifier: your_project_id
   orgIdentifier: your_org_id
   tags: {}
   stages:
     - stage:
-        name: Build and Test
-        identifier: build_and_test
+        name: Build and Test All Frameworks
+        identifier: build_and_test_all
         type: CI
         spec:
           cloneCodebase: true
@@ -21,7 +21,7 @@ pipeline:
             steps:
               - step:
                   type: RunTests
-                  name: Run All Tests with Intelligence
+                  name: Run All Tests (JUnit + Cucumber + TestNG)
                   identifier: run_all_tests
                   spec:
                     connectorRef: account.harnessImage
@@ -31,7 +31,7 @@ pipeline:
                     language: Java
                     buildTool: Gradle
                     # Use --continue to generate reports even if tests fail
-                    args: test --continue --no-daemon
+                    args: testAll --continue --no-daemon
                     packages: com.taskmanager
                     runOnlySelectedTests: true
                     preCommand: |-
@@ -41,26 +41,43 @@ pipeline:
 
                       echo "=== Gradle Version ==="
                       ./gradlew --version
+
+                      # Install Chrome for Selenium tests
+                      echo "=== Installing Chrome ==="
+                      apt-get update
+                      apt-get install -y wget gnupg
+                      wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add -
+                      echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list
+                      apt-get update
+                      apt-get install -y google-chrome-stable
+
+                      # Verify Chrome installation
+                      google-chrome --version
                     postCommand: |-
                       # Debug: Show generated reports
                       echo "=== JUnit Test Results ==="
-                      find app/build/test-results/test -name "*.xml" -type f | wc -l
+                      find app/build/test-results/test -name "*.xml" -type f -ls || echo "No JUnit XML files found"
 
                       echo "=== Cucumber Test Results ==="
-                      find app/build/test-results/cucumber -name "*.xml" -type f | wc -l
+                      find app/build/test-results/cucumber -name "*.xml" -type f -ls || echo "No Cucumber XML files found"
+
+                      echo "=== TestNG/Selenium Test Results ==="
+                      find app/build/test-results/testng/junitreports -name "*.xml" -type f -ls || echo "No TestNG XML files found"
 
                       # List all XML files
                       echo "=== All Test Report Files ==="
                       find app/build/test-results -name "*.xml" -type f
 
-                      # Archive Cucumber HTML reports
-                      mkdir -p /harness/cucumber-reports
-                      cp -r app/build/reports/cucumber/* /harness/cucumber-reports/ 2>/dev/null || true
+                      # Archive Cucumber and TestNG HTML reports
+                      mkdir -p /harness/test-reports
+                      cp -r app/build/reports/cucumber/* /harness/test-reports/ 2>/dev/null || true
+                      cp -r app/build/reports/testng/* /harness/test-reports/ 2>/dev/null || true
                     reports:
                       type: JUnit
                       spec:
                         paths:
                           # IMPORTANT: Include app/ prefix for multi-module project
-                          - "app/build/test-results/test/*.xml"
-                          - "app/build/test-results/cucumber/*.xml"
+                          - "app/build/test-results/test/*.xml"                      # JUnit tests (120)
+                          - "app/build/test-results/cucumber/*.xml"                  # Cucumber tests (3)
+                          - "app/build/test-results/testng/junitreports/*.xml"       # TestNG tests (9)
                     enableTestSplitting: false

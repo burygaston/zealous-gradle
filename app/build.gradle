@@ -187,9 +187,9 @@ task testng(type: Test) {
     systemProperty 'wdm.cachePath', "${System.getProperty('user.home')}/.cache/selenium"
     systemProperty 'webdriver.chrome.driver', ''
 
-    // Exclude TestNG tests from regular 'test' task
-    exclude '**/*SeleniumTest*'
-    exclude '**/*UITest*'
+    // Only include Selenium/UI tests (opposite of test task excludes)
+    include '**/*SeleniumTest*'
+    include '**/*UITest*'
 }
 
 // Exclude TestNG tests from JUnit test task
