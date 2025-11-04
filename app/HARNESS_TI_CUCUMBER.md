@@ -8,23 +8,29 @@ Cucumber tests generate **JUnit-compatible XML reports** that Harness Test Intel
 
 ### Report Locations
 
-When you run `./gradlew test`, the following reports are generated:
+When you run `./gradlew test`, test results are generated in **two separate locations**:
 
-#### JUnit XML Reports (Harness TI Compatible)
+#### 1. JUnit XML Reports (Standard Tests)
 Located in `app/build/test-results/test/`:
-- `TEST-com.taskmanager.cucumber.RunCucumberTest.xml` - JUnit XML for Cucumber tests
-- `TEST-*.xml` - JUnit XML for all other JUnit tests
+- `TEST-*.xml` - All JUnit test results (120 tests)
+- `TEST-com.taskmanager.cucumber.RunCucumberTest.xml` - JUnit Platform wrapper
 
-**Harness TI reads these files** to:
-- Track test execution results
+#### 2. Cucumber JUnit XML (Separate Report)
+Located in `app/build/test-results/cucumber/`:
+- `cucumber.xml` - Cucumber-generated JUnit XML with feature/scenario names (3 scenarios)
+
+**Harness TI can read both** to:
+- Track test execution results from JUnit AND Cucumber
 - Identify which tests need to run based on code changes
-- Generate test reports and analytics
+- Generate unified test reports and analytics
+- See feature-based names for Cucumber tests
 
-#### Additional Cucumber Reports (for human consumption)
+#### Additional Reports (for human viewing)
 Located in `app/build/reports/cucumber/`:
 - `cucumber-report.html` - Beautiful HTML report
 - `cucumber.json` - JSON format for CI/CD integrations
-- `cucumber.xml` - Additional Cucumber-specific XML
+
+**Want to configure both report paths?** See [HARNESS_TI_DUAL_REPORTS.md](./HARNESS_TI_DUAL_REPORTS.md) for the complete dual-report configuration guide.
 
 ## Harness Pipeline Configuration
 
@@ -55,11 +61,15 @@ Located in `app/build/reports/cucumber/`:
         type: JUnit
         spec:
           paths:
-            - "app/build/test-results/test/*.xml"
+            - "app/build/test-results/test/*.xml"      # JUnit tests
+            - "app/build/test-results/cucumber/*.xml"   # Cucumber tests (separate)
       enableTestSplitting: false
 ```
 
-**Note**: The `--continue` flag ensures Gradle generates XML reports even when tests fail, preventing the "no tests found" error.
+**Notes**:
+- The `--continue` flag ensures Gradle generates XML reports even when tests fail, preventing the "no tests found" error.
+- Using **two path patterns** allows Harness to read both JUnit and Cucumber test results separately
+- See [HARNESS_TI_DUAL_REPORTS.md](./HARNESS_TI_DUAL_REPORTS.md) for detailed explanation
 
 ### Step 2: View Results
 
