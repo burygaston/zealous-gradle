@@ -98,3 +98,9 @@ The Cucumber HTML report provides a beautiful, feature-oriented view of your tes
 ## CI/CD Integration
 
 Both JUnit and Cucumber XML reports can be consumed by CI/CD tools like Jenkins, GitLab CI, GitHub Actions, etc.
+
+### Harness Test Intelligence
+
+Cucumber tests are **fully compatible with Harness Test Intelligence**! The JUnit Platform generates JUnit-compatible XML reports that Harness TI can read.
+
+See [HARNESS_TI_CUCUMBER.md](./HARNESS_TI_CUCUMBER.md) for detailed setup instructions and pipeline configuration.

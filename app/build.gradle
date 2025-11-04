@@ -89,7 +89,10 @@ tasks.named('test') {
     }
 
     // Configure Cucumber reports
-    systemProperty 'cucumber.plugin', 'pretty, html:build/reports/cucumber/cucumber-report.html, json:build/reports/cucumber/cucumber.json, junit:build/reports/cucumber/cucumber.xml'
+    // Generate reports in multiple locations for different purposes:
+    // - build/test-results/test/cucumber.xml: For Harness Test Intelligence
+    // - build/reports/cucumber/*: For detailed reporting
+    systemProperty 'cucumber.plugin', 'pretty, html:build/reports/cucumber/cucumber-report.html, json:build/reports/cucumber/cucumber.json, junit:build/test-results/test/cucumber.xml, junit:build/reports/cucumber/cucumber.xml'
     systemProperty 'cucumber.publish.quiet', 'true'
 }
 
