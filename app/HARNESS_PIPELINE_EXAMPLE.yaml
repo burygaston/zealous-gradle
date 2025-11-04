@@ -1,0 +1,66 @@
+pipeline:
+  name: ZealousGradle - Test Intelligence
+  identifier: zealousgradle_test_intelligence
+  projectIdentifier: your_project_id
+  orgIdentifier: your_org_id
+  tags: {}
+  stages:
+    - stage:
+        name: Build and Test
+        identifier: build_and_test
+        type: CI
+        spec:
+          cloneCodebase: true
+          platform:
+            os: Linux
+            arch: Amd64
+          runtime:
+            type: Cloud
+            spec: {}
+          execution:
+            steps:
+              - step:
+                  type: RunTests
+                  name: Run All Tests with Intelligence
+                  identifier: run_all_tests
+                  spec:
+                    connectorRef: account.harnessImage
+                    # CRITICAL: Use Java 17 image for Spring Boot 3.2.0
+                    image: gradle:8.5-jdk17
+                    shell: Bash
+                    language: Java
+                    buildTool: Gradle
+                    # Use --continue to generate reports even if tests fail
+                    args: test --continue --no-daemon
+                    packages: com.taskmanager
+                    runOnlySelectedTests: true
+                    preCommand: |-
+                      # Verify Java version
+                      echo "=== Java Version ==="
+                      java -version
+
+                      echo "=== Gradle Version ==="
+                      ./gradlew --version
+                    postCommand: |-
+                      # Debug: Show generated reports
+                      echo "=== JUnit Test Results ==="
+                      find app/build/test-results/test -name "*.xml" -type f | wc -l
+
+                      echo "=== Cucumber Test Results ==="
+                      find app/build/test-results/cucumber -name "*.xml" -type f | wc -l
+
+                      # List all XML files
+                      echo "=== All Test Report Files ==="
+                      find app/build/test-results -name "*.xml" -type f
+
+                      # Archive Cucumber HTML reports
+                      mkdir -p /harness/cucumber-reports
+                      cp -r app/build/reports/cucumber/* /harness/cucumber-reports/ 2>/dev/null || true
+                    reports:
+                      type: JUnit
+                      spec:
+                        paths:
+                          # IMPORTANT: Include app/ prefix for multi-module project
+                          - "app/build/test-results/test/*.xml"
+                          - "app/build/test-results/cucumber/*.xml"
+                    enableTestSplitting: false
