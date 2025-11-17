@@ -99,7 +99,7 @@ tasks.named('test') {
     }
 
     // Configure Cucumber reports
-    // Generate JUnit XML report in dedicated cucumber directory for Harness TI
+    // Generate JUnit XML report in dedicated cucumber directory
     // This is SEPARATE from the standard JUnit test results
     systemProperty 'cucumber.plugin', 'pretty, html:build/reports/cucumber/cucumber-report.html, json:build/reports/cucumber/cucumber.json, junit:build/test-results/cucumber/cucumber.xml'
     systemProperty 'cucumber.publish.quiet', 'true'
