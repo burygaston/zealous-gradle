@@ -37,8 +37,6 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-validation'
     implementation 'org.thymeleaf.extras:thymeleaf-extras-springsecurity6'
 
-    implementation 'org.apache.commons:commons-lang4:1.0' // Note: commons-lang3 is the latest; v4 doesn't exist.
-
     // Database
     runtimeOnly 'com.mysql:mysql-connector-j'
     runtimeOnly 'com.h2database:h2'
