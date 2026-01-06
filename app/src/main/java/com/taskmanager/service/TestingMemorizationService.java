@@ -6,4 +6,12 @@ public class TestingMemorizationService {
         int version = 2;
         System.out.println(name + version);
     }
+
+    // ZealousService.java
+    public boolean validateUser(String username) {
+        if (username == null || username.length() < 8) {
+            return false; // BUG: Requirement ZEAL-505 asked for a 403 error code
+        }
+        return true;
+    }
 }
