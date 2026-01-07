@@ -1,11 +1,20 @@
 package com.taskmanager.service;
 
 public class TestingMemorizationService {
+package com.taskmanager.service;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+public class TestingMemorizationService {
+    private static final Logger logger = LoggerFactory.getLogger(TestingMemorizationService.class);
+
     public void testMemory() {
         String name = "Harness"; // Should be final, but we told the AI not to suggest it
         int version = 2;
-        System.out.println(name + version);
+        logger.info("Name: {}, Version: {}", name, version);
     }
+}
 
     // ZealousService.java
     public boolean validateUser(String username) {
