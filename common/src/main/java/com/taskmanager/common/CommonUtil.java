@@ -16,8 +16,8 @@ public class CommonUtil {
         return "Hello from Task Manager";
     }
 
-    public static void newMethod() {
-        System.out.println("This is a new V3 method!");
+    public static void newMethod(String context) {
+        System.out.println("This is a new V3 method with context: " + context);
     }
 
     public static void newMethodV5() {

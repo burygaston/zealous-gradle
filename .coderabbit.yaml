@@ -1,0 +1,23 @@
+# .coderabbit.yaml for feature/code-graph
+language: "en-US"
+early_access: true # Enables the latest Code Graph features
+
+reviews:
+  profile: "assertive"
+  request_changes_workflow: true
+  high_level_summary: true
+
+  # Focus specifically on cross-module impacts
+  path_instructions:
+    - path: "product/**/*"
+      instructions: |
+        Analyze how changes in this module impact downstream dependencies in other product modules.
+        If a method signature changes, explicitly list the files in other modules that will now fail to compile.
+
+  # Enable architectural visualizations
+  tools:
+    ast-analysis: true
+    diagram-generation: true
+
+chat:
+  auto_reply: true
