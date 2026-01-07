@@ -1,0 +1,10 @@
+# .coderabbit.yaml
+language: "en-US"
+reviews:
+  profile: "assertive"
+  request_changes_workflow: true
+  high_level_summary: true
+  conventions:
+    - "All Gradle dependencies must use specific versions (no dynamic '+' or 'latest' versions)."
+    - "Methods with more than 3 parameters must have a Javadoc @param explanation."
+    - "Avoid using System.out.println; use a logger instead."
