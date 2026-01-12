@@ -21,5 +21,5 @@ public class ZealousService {
     public void readFile(String path) throws FileNotFoundException {
         FileInputStream fis = new FileInputStream(path);
         // fis is never closed; CodeRabbit should catch the missing try-with-resources
-    }
+    } //testing a simple comment for incremental reviews by coderabbit
 }
