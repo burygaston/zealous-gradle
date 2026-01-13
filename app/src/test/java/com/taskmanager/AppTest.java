@@ -9,6 +9,6 @@ class AppTest {
     @Test
     void appHasAGreeting() {
         assertNotNull(classUnderTest.getGreeting(), "app should have a greeting");
-        assertEquals("Wrong Greeting", classUnderTest.getGreeting());
+        assertEquals("Hello World!", classUnderTest.getGreeting());
     }
 }
