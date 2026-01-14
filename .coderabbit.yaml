@@ -1,10 +1,25 @@
-# .coderabbit.yaml
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
 language: "en-US"
+early_access: true
+enable_free_tier: true
+
 reviews:
   profile: "assertive"
   request_changes_workflow: true
   high_level_summary: true
+  review_status: true
+  commit_status: true
+  auto_review:
+    enabled: true
+    auto_incremental_review: true
+  tools:
+    github-checks:
+      enabled: true
+      timeout_ms: 300000
   conventions:
     - "All Gradle dependencies must use specific versions (no dynamic '+' or 'latest' versions)."
     - "Methods with more than 3 parameters must have a Javadoc @param explanation."
     - "Avoid using System.out.println; use a logger instead."
+
+chat:
+  auto_reply: true
