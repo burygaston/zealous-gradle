@@ -4,22 +4,30 @@ early_access: true
 enable_free_tier: true
 
 reviews:
-  profile: "assertive"
-  request_changes_workflow: true
+  profile: "chill"
+  request_changes_workflow: false
   high_level_summary: true
+  poem: false
   review_status: true
   commit_status: true
+  collapse_walkthrough: false
+  sequence_diagrams: true
+  changed_files_summary: true
+  labeling_instructions: []
+  path_filters: []
+  path_instructions: []
+  abort_on_close: true
   auto_review:
     enabled: true
     auto_incremental_review: true
+    ignore_title_keywords: []
+    labels: []
+    drafts: false
+    base_branches: []
   tools:
     github-checks:
       enabled: true
-      timeout_ms: 300000
-  conventions:
-    - "All Gradle dependencies must use specific versions (no dynamic '+' or 'latest' versions)."
-    - "Methods with more than 3 parameters must have a Javadoc @param explanation."
-    - "Avoid using System.out.println; use a logger instead."
+      timeout_ms: 90000
 
 chat:
   auto_reply: true

@@ -86,8 +86,8 @@ tasks.named('test') {
     useJUnitPlatform()
     maxParallelForks = Runtime.runtime.availableProcessors().intdiv(2) ?: 1
 
-    // Don't fail the build on test failures - let --continue handle it
-    ignoreFailures = true
+    // Fail the build on test failures
+    ignoreFailures = false
 
     testLogging {
         events "passed", "skipped", "failed"
