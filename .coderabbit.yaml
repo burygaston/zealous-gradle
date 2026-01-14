@@ -16,6 +16,8 @@ reviews:
     github-checks:
       enabled: true
       timeout_ms: 300000
+    gitleaks:
+      enabled: true
   conventions:
     - "All Gradle dependencies must use specific versions (no dynamic '+' or 'latest' versions)."
     - "Methods with more than 3 parameters must have a Javadoc @param explanation."
